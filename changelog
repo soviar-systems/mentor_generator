@@ -1,3 +1,37 @@
+v0.35.0 – 2026-02-13
+
+FEATURE: Restore human-like traits + single-file course_history architecture
+
+Architectural change (ADR-26001):
+- Replaced individual session_N files with single append-only course_history file
+- Users append each session record to one file instead of managing N separate files
+- Solves web UI attachment limits (most limit to 5-10 files)
+- Renamed session_files_protocol → course_history_protocol
+- Updated all references from "session files" to "course_history" throughout
+- Added context_management section with awareness for very large histories
+- Updated session_output_protocol for append-to-file workflow
+- Updated guidance_for_user with course_history workflow instructions
+
+Restored anti-sycophancy mechanisms from v0.29.1 (adapted to warm tone):
+- Added anti_praise_examples to feedback_approach (concrete few-shot examples)
+- Replaced vague patience_with_attempts with concrete two-attempt rule
+- Changed encourage_reasoning back to require_reasoning (mastery gate)
+- Expanded mastery_check with if_incomplete and gate enforcement detail
+- Restored fiction/sci-fi references in emergency_brake_rules.recovery_protocol
+- Updated Level Appropriateness peer review checkpoint to reference failure log
+
+Persona mapping:
+- Restored rules 6-7: persona jargon in learning rules + signature greeting
+
+Removed DRY violations:
+- session_protocols _notes no longer duplicate trigger logic from course_history_protocol
+
+New files:
+- architecture/adr/adr_26001_single_file_course_history.md
+- misc/plan/plan_20260213_architectural_analysis_and_human_traits_recovery.md
+
+Updated: CLAUDE.md, README.md references
+
 v0.34.1 – 2026-01-29
 
 FIX: Complete user workflow instructions and include session_template in output

@@ -2,7 +2,7 @@
 
 Mentor Generator creates a personalized AI learning mentor tailored to your language, knowledge level, goals, and constraints.
 
-In a 5-minute conversation, it generates two configuration files that define your personal mentor. These files accompany you throughout your learning journey, tracking progress across sessions.
+In a 5-minute conversation, it generates three configuration files that define your personal mentor. These files accompany you throughout your learning journey, tracking progress across sessions.
 
 > **Important notes:**
 > 1. AI models can hallucinate. The prompts contain many checks, but there is no 100% guarantee.
@@ -12,47 +12,48 @@ In a 5-minute conversation, it generates two configuration files that define you
 ## Quick Start
 
 1. Copy the contents of `mentor_generator.json`
-2. Paste into a powerful AI chat (Gemini 2.5 Pro, DeepSeek, Claude Opus 4.5)
+2. Paste into a powerful AI chat (see model recommendations below)
 3. Answer 9 questions about your learning goals
-4. Receive two files: `mentor_system_prompt` and `course_config`
-5. Start learning sessions by attaching these files to new chats
+4. Receive three files: `mentor_system_prompt`, `user_profile`, and `session_template`
+5. Create an empty `course_history` file
+6. Start learning sessions by attaching these files to new chats
 
-> **Model recommendations:** Gemini 2.5 Pro and DeepSeek start working immediately. ChatGPT often reads the file verbatim and asks what to do - not recommended.
+> **Model recommendations:** Gemini Pro, Gemini Flash, DeepSeek, and Qwen3-Max start working immediately. ChatGPT often reads the file verbatim and asks what to do - not recommended.
 
-## The 3-File System
+## The File System
 
 ### Generated Files (You Create Once)
 
 | File | Purpose | When to Modify |
 |------|---------|----------------|
 | `mentor_system_prompt` | Mentor personality, teaching rules, behavior | Never |
-| `course_config` | Your profile, constraints, curriculum | Rarely (only if constraints change) |
+| `user_profile` | Your profile, constraints, curriculum | Rarely (only if constraints change) |
+| `session_template` | Format for session records | Never |
 
-### Session Files (Created During Learning)
+### Course History (Grows During Learning)
 
-| File | Purpose | When Created |
+| File | Purpose | How It Works |
 |------|---------|--------------|
-| `session_1`, `session_2`, ... | Progress tracking, mastery records, notes | End of each learning session |
+| `course_history` | All session records in one file | Append new record after each session |
 
-**Key principle:** Session files are never overwritten. Each session creates a new file.
+**Key principle:** Session records are never modified. Each session appends a new record.
 
 ## Learning Workflow
 
 ### Starting a Session
 
 1. Open a **new chat** with your AI
-2. Attach `mentor_system_prompt` and `course_config`
-3. Attach all previous session files (`session_1`, `session_2`, etc.)
-4. Say "Let's continue" or "Start session"
+2. Attach `mentor_system_prompt`, `user_profile`, and `session_template`
+3. Attach `course_history` (from session 2 onwards)
+4. Say "Let's continue" or "Let's start"
 
 The mentor reads all files, synthesizes your history, and continues from where you left off.
 
 ### Ending a Session
 
 1. Signal session end ("Let's stop here", "End session", or reach a natural conclusion)
-2. Mentor outputs a new `session_N` file
-3. Save this file to your course folder
-4. Next session, attach it along with previous sessions
+2. Mentor outputs a new session record
+3. Append this record to your `course_history` file
 
 ### Why New Chats?
 
@@ -79,7 +80,7 @@ The meta-prompt asks 9 questions. Answer clearly and specifically - vague answer
 The separation of files enables sharing:
 
 - Share your `mentor_system_prompt` with others learning the same topic
-- Each person creates their own `course_config` with their profile
+- Each person creates their own `user_profile` and `course_history`
 - Same teaching style, personalized per user
 
 ## File Format
@@ -99,11 +100,9 @@ If you have an existing monolithic JSON from previous versions:
 ```
 my_course/
 ├── mentor_system_prompt     # Attach every session
-├── course_config            # Attach every session
-└── sessions/
-    ├── session_1            # Attach to session 2+
-    ├── session_2            # Attach to session 3+
-    └── ...
+├── user_profile             # Attach every session
+├── session_template         # Attach every session
+└── course_history           # Append-only, attach from session 2+
 ```
 
 ## Example Projects

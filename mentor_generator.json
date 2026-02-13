@@ -12,9 +12,9 @@
   ],
 
   "metadata": {
-    "version": "0.34.1",
+    "version": "0.35.0",
     "birth": "2025-10-11",
-    "modified": "2026-01-29",
+    "modified": "2026-02-13",
     "author": "vrudakov",
     "tags": ["meta_prompt", "pedagogical", "template_based"],
     "license": "MIT"
@@ -128,7 +128,9 @@
             "2. Update expertise with persona-specific knowledge areas",
             "3. Update tone with verbal mannerisms and signature phrases",
             "4. Update teaching_style with persona's known methods",
-            "5. Update emergency_brake recovery_protocol with persona-appropriate phrases"
+            "5. Update emergency_brake recovery_protocol with persona-appropriate phrases",
+            "6. Embed persona's characteristic terminology or jargon into learning framework rules",
+            "7. Use persona's signature greeting style in session protocols (first_session welcome and subsequent_session continuation)"
           ]
         }
       },
@@ -167,36 +169,43 @@
 
             "2. **user_profile** - Contains your profile, constraints, and learning curriculum. You can update this file if your circumstances change (new hardware, different learning strategy, etc.).",
 
-            "3. **session_template** - The exact format the mentor uses to record each session. You attach this so the mentor knows how to structure session files.",
+            "3. **session_template** - The exact format the mentor uses to record each session. You attach this so the mentor knows how to structure session records.",
+
+            "You will also create one more file yourself:",
+
+            "4. **course_history** - An initially empty file where you will accumulate all your session records. After each session, you append the new record here.",
 
             "### Learning Workflow",
 
             "**When you start your FIRST learning session:**",
             "1. Open a **new chat** with your AI (Gemini, Claude, DeepSeek, etc.)",
-            "2. Attach all three files: **mentor_system_prompt**, **user_profile**, and **session_template**",
+            "2. Attach three files: **mentor_system_prompt**, **user_profile**, and **session_template**",
             "3. Say 'Let's start' or simply greet your mentor",
             "4. The mentor will introduce itself, present your learning roadmap, and begin Phase 1",
 
             "**When you start SUBSEQUENT learning sessions (session 2, 3, ...):**",
             "1. Open a **new chat** with your AI",
-            "2. Attach all three core files: **mentor_system_prompt**, **user_profile**, and **session_template**",
-            "3. Attach ALL your previous session files: **session_1**, **session_2**, etc. (the mentor reads these to know your progress)",
-            "4. Say 'Let's continue' or greet your mentor",
-            "5. The mentor will recap where you left off and continue from there",
+            "2. Attach four files: **mentor_system_prompt**, **user_profile**, **session_template**, and **course_history**",
+            "3. Say 'Let's continue' or greet your mentor",
+            "4. The mentor will recap where you left off and continue from there",
 
             "**When you end a learning session:**",
             "1. Tell the mentor you want to end the session (e.g., 'Let's wrap up for today')",
-            "2. The mentor will output a new **session_N** file (session_1, session_2, etc.)",
-            "3. Copy and save this file to your course folder - it contains your progress, learning observations, and any mentor mistakes to avoid",
-            "4. Never overwrite old session files - each session creates a new file",
+            "2. The mentor will output a new session record",
+            "3. Append this record to your **course_history** file - it contains your progress, learning observations, and any mentor mistakes to avoid",
+            "4. Never delete old records from course_history - each session appends a new record",
 
             "### Why New Chats?",
 
             "AI chats have context limits. Starting fresh with your files attached gives the mentor full context without old conversation clutter.",
 
+            "### Why One course_history File?",
+
+            "Most web AI chats limit how many files you can attach. By keeping all session records in one file, you only ever need to attach 3-4 files total, no matter how many sessions you've had.",
+
             "### Sharing Your Mentor",
 
-            "You can share your mentor_system_prompt with friends learning the same topic. Each person just needs their own user_profile with their profile.",
+            "You can share your mentor_system_prompt with friends learning the same topic. Each person just needs their own user_profile and course_history.",
 
             "### File Format",
 
@@ -218,7 +227,7 @@
 
             "**You won't break anything** as long as you only change the values (the parts after the colons). If something goes wrong, the AI will tell you the file has an error - just fix or restore it.",
 
-            "The **mentor_system_prompt** and **session_template** files should NOT be edited - they contain rules and structure that the mentor needs.",
+            "The **mentor_system_prompt** and **session_template** files should NOT be edited - they contain rules and structure that the mentor needs. The **course_history** file should only be appended to, never edited or truncated.",
 
             "---",
 
@@ -276,8 +285,8 @@
     },
     "session_template": {
       "output_filename": "session_template",
-      "purpose": "Session record structure - defines the format for session files",
-      "note": "Meta-prompt outputs this file as-is (no modifications). User attaches it to learning sessions. Mentor uses this structure to create session_N files."
+      "purpose": "Session record structure - defines the format for session records in course_history",
+      "note": "Meta-prompt outputs this file as-is (no modifications). User attaches it to learning sessions. Mentor uses this structure to create session records that the user appends to course_history."
     }
   }
 }

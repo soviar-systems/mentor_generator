@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Mentor Generator is a **meta-prompt engineering project** that creates personalized AI learning mentors. The system generates two configuration files that define a customized learning experience.
+Mentor Generator is a **meta-prompt engineering project** that creates personalized AI learning mentors. The system generates three configuration files that define a customized learning experience.
 
 This is **not a traditional software project** - there is no build system, no package manager, no automated tests. The JSON/template files are the product.
 
@@ -19,6 +19,10 @@ mentor_generator/
 │   ├── mentor_system_prompt.template  # Template for mentor behavior rules
 │   ├── user_profile.template          # Template for user profile/curriculum
 │   └── session.template               # Template for session records
+├── architecture/
+│   └── adr/                           # Architecture Decision Records
+├── misc/
+│   └── plan/                          # Implementation plans (saved for history)
 ├── README.md
 ├── CLAUDE.md
 └── changelog
@@ -30,10 +34,8 @@ mentor_generator/
 user_course/
 ├── mentor_system_prompt    # Static mentor rules (attach every session)
 ├── user_profile            # User profile + curriculum (attach every session)
-└── sessions/
-    ├── session_1           # Immutable session records
-    ├── session_2
-    └── ...
+├── session_template        # Session record format (attach every session)
+└── course_history          # Append-only file with all session records
 ```
 
 ### Core Files
@@ -53,12 +55,13 @@ Contains ONLY the questionnaire logic:
 
 Defines mentor behavior (filled once during generation):
 - **mentor_profile** - Persona, tone, teaching style
-- **mentor_self_control** - Self-correction, peer review checks
-- **session_files_protocol** - How to read attached files
+- **mentor_self_control** - Self-correction, peer review checks, anti-praise examples
+- **course_history_protocol** - How to read course_history and select session protocol
 - **session_protocols** - First session vs subsequent session behavior
 - **interaction_flow** - Turn-taking, emergency brakes
 - **learning_framework** - Mastery-gated progression rules
-- **session_output_protocol** - Exact template for session file output
+- **context_management** - Single-file course_history approach (see ADR-26001)
+- **session_output_protocol** - How to output session records for course_history
 
 #### `templates/user_profile.template`
 
@@ -80,7 +83,7 @@ Defines session record structure (mentor fills at end of each session):
 
 1. **Separation of Concerns**: Meta-prompt and mentor are different roles in different files
 2. **Template-First Output**: Mentor fills exact templates, never "decides" what to include
-3. **Immutable Session History**: Each session creates a new file, old files never modified
+3. **Append-Only Session History**: Session records are appended to a single course_history file, never modified (ADR-26001)
 4. **Predictability Through Constraints**: Output format is constrained, not instructed
 5. **Reusable Mentor Templates**: Same mentor_system_prompt works for multiple users
 6. **Format-Agnostic**: JSON shown, but YAML/Markdown/text equally valid
@@ -97,23 +100,17 @@ Defines session record structure (mentor fills at end of each session):
 1. Copy `mentor_generator.json` content
 2. Paste into powerful LLM chat
 3. Answer 9 questions
-4. AI validates and outputs TWO files
-5. Save both files to course folder
+4. AI validates and outputs THREE files
+5. Save all files to course folder
+6. Create an empty `course_history` file
 
 ### Learning Sessions
 
-1. Open new chat, attach `mentor_system_prompt` + `user_profile` + all `session_N` files
-2. Say "Let's continue"
+1. Open new chat, attach `mentor_system_prompt` + `user_profile` + `session_template` + `course_history`
+2. Say "Let's continue" (or "Let's start" for first session)
 3. Learn with mastery-gated progression
-4. At session end, mentor outputs `session_N` file
-5. Save new session file, repeat
-
-## Recommended Models
-
-- Gemini 2.5 Pro (starts immediately)
-- DeepSeek (starts immediately)
-- Claude Opus 4.5
-- NOT ChatGPT-5 (reads verbatim and asks what to do)
+4. At session end, mentor outputs a session record
+5. Append record to `course_history`, repeat
 
 ## JSON/Template Conventions
 
@@ -121,6 +118,10 @@ Defines session record structure (mentor fills at end of each session):
 - Placeholders marked with `<...>` are filled during generation
 - Top-level fields are human-readable and machine-usable
 - Version tracked in `metadata.version`
+
+## Critical Conventions
+
+When you create a plan in /plan mode, save it to misc/plan/plan_<YYYYMMDD>_<descriptive_slug>.md, ONLY then start implementation. After the plan is fully implemented, move it to misc/plan/implemented/. This is needed to save the history of the decisions made between context switches.
 
 ## When Editing
 
