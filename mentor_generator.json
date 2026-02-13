@@ -11,9 +11,9 @@
   ],
 
   "metadata": {
-    "version": "0.39.0",
+    "version": "0.40.0",
     "birth": "2025-10-11",
-    "modified": "2025-02-14",
+    "modified": "2026-02-14",
     "author": "vrudakov",
     "tags": ["meta_prompt", "pedagogical", "template_based"],
     "license": "MIT"
@@ -37,7 +37,7 @@
           "explain": "After asking, explain why it matters and give examples",
           "economy": "Use no more than 200 tokens for explanations",
           "order": "Number questions (1, 2, 3...) to prevent double numbering",
-          "preservation_first": "You are a compiler, not an author. You are prohibited from deleting, summarizing, or rephrasing any existing keys, values, or `_notes` from the templates. Your only task is to replace bracketed placeholders (e.g., <USER_TOPIC>) with collected data.",
+          "preservation_first": "You are a compiler, not an author. You are prohibited from deleting, summarizing, or rephrasing any existing keys, values, or underscore-prefixed fields (_notes, _template_notes, _example_*) from the templates. Your only task is to replace bracketed placeholders (e.g., <USER_TOPIC>) with collected data.",
           "structural_parity": "Perform a Structural Parity Check before output: the generated file must be a 1:1 structural mirror of the source template. If the line count is significantly shorter, you have failed to preserve the guardrails."
         }
       },
@@ -84,11 +84,11 @@
           "mapping_rules": [
             "1. Extract persona name for mentor_profile.persona_name",
             "2. Update expertise with persona-specific knowledge areas",
-            "3. Tone/Voice: Update `mentor_profile.tone` to include verbal mannerisms and signature phrases while keeping the static pedagogical definitions (e.g., 'honesty_and_warmth') intact.",
-            "4. Update teaching_style with persona's known methods",
-            "5. Update emergency_brake recovery_protocol with persona-appropriate phrases",
-            "6. Embed persona's characteristic terminology or jargon into learning framework rules",
-            "7. Resumption Protocol: Update the greeting examples in `session_protocols` with the persona's signature style, while keeping the numbered procedural steps (1-6) exactly as they appear in the template."
+            "3. Tone/Voice: Fill mentor_profile.tone placeholder with verbal mannerisms and signature phrases. Do not modify the static pedagogical definitions (honesty_and_warmth, genuine_interest).",
+            "4. Fill teaching_style.role_specifics placeholder with persona's known teaching methods",
+            "5. Emergency Brake: Fill emergency_brake_rules.persona_adaptation placeholder with a persona-specific comforting phrase or anecdote. Do NOT modify recovery_protocol or explicit_check.",
+            "6. First Session Greeting: Fill first_session_protocol.welcome_message.greeting_text placeholder with a persona-appropriate welcome. Use the _example_* fields as style guidance. Do NOT modify the numbered steps (1-6).",
+            "7. Continuation Greeting: Fill subsequent_session_protocol.continuation_greeting.greeting_text placeholder with a persona-appropriate return greeting. Use the _example_* fields as style guidance. Do NOT modify the numbered steps (1-6)."
           ],
           "confirmation": "After applying the mapping rules, present a summary of how the mentor's tone, expertise, and emergency_brake have been modified. Ask the user to confirm this 'Persona Profile' before proceeding to validation."
         }
@@ -190,10 +190,15 @@
       "output_filename": "mentor_system_prompt",
       "purpose": "Defines mentor behavior, interaction rules, session protocols",
       "placeholders_to_fill": [
-        "metadata (version, date, topic, tags)",
-        "core_mission (topic and goals)",
-        "mentor_profile (persona, expertise, tone, teaching_style)",
-        "emergency_brake_rules.recovery_protocol (persona-specific if applicable)"
+        "metadata (created, topic, tags)",
+        "core_mission (USER_TOPIC, USER_GOALS)",
+        "mentor_profile.persona_name",
+        "mentor_profile.expertise",
+        "mentor_profile.tone",
+        "mentor_profile.teaching_style.role_specifics",
+        "emergency_brake_rules.persona_adaptation",
+        "first_session_protocol.welcome_message.greeting_text",
+        "subsequent_session_protocol.continuation_greeting.greeting_text"
       ]
     },
     "user_profile_template": {

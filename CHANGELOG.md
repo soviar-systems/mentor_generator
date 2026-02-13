@@ -1,3 +1,30 @@
+v0.40.0 – 2026-02-14
+
+COMPLETE: Strict placeholder injection across templates (ADR-26002)
+
+Completes the work started in 4d622de which updated mentor_generator.json
+but did not touch the templates.
+
+New ADRs:
+- ADR-26003: Instruction Budget — LLM context limits vs redundant guardrails
+- ADR-26004: Templates are output schemas, not examples
+
+Templates:
+- Added greeting_text placeholders to welcome_message and continuation_greeting
+- Added persona_adaptation placeholder to emergency_brake_rules
+- Renamed example_* → _example_* in greeting sections (ADR-26004: schema field taxonomy)
+- Fixed session.template _template_notes to match course_history architecture (was
+  still describing per-file sessions from before v0.35.0)
+
+Meta-prompt:
+- Updated persona_mapping_protocol rules to reference new placeholder fields
+- Removed rule 6 (jargon in learning_framework.rules) — conflicts with immutability
+- Updated template_references.placeholders_to_fill with complete field manifest
+- Fixed preservation_first to cover all underscore-prefixed fields (_notes, _template_notes, _example_*)
+- Fixed metadata.modified date (was 2025, should be 2026)
+
+---
+
 v0.39.0 – 2025-02-14
 
 STRUCTURAL SIMPLIFICATION: Restore execution reliability

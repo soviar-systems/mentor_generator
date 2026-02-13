@@ -1,8 +1,8 @@
 {
   "_template_notes": {
-    "purpose": "Session record template - mentor fills this at end of each session",
-    "usage": "Save as session_N (session_1, session_2...). Attach ALL session files to each new chat.",
-    "immutability": "Never modify old session files. Each session creates a new file."
+    "purpose": "Session record template - defines the format for session records in course_history",
+    "usage": "The mentor uses this template structure to create a session record at the end of each session. The user appends the record to their course_history file.",
+    "immutability": "Never modify existing session records in course_history. Only append new records."
   },
 
   "session_number": "<increment from last session, or 1>",
