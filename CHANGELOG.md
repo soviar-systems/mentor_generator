@@ -1,3 +1,32 @@
+v0.37.0 – 2026-02-13
+
+FIX: 4 structural regressions causing degraded LLM behavior
+
+Root cause: v0.31.1–v0.36.0 restructured questions as {ask, _then} objects
+with per-question "STOP" text, and separated validation/generation into
+independent sibling objects. These structural changes caused LLMs to:
+print "STOP. Wait for user response.", skip Q9, skip validation, and
+generate files prematurely.
+
+Fix restores v0.29.1's robust structural patterns while keeping v0.36.0
+improvements (3-file output, externalized templates, rich guidance text):
+
+- Removed all `_then` fields from questions — restored bare-string format (Q2–Q9)
+  to eliminate printable "STOP" text entirely (v0.29.1 had no such text)
+- Added explicit question count: `total_questions: 10` + triple reinforcement
+  in collection._notes, _notes.CRITICAL_TURN_TAKING, and procedure_control_flow
+- Merged `validation` + `verbal_validation_report` → single `validation_gate`
+  with GATE semantics and `proceed_condition` (structural prerequisite, not passive checklist)
+- Merged `guidance_for_user` + `file_generation_protocol` → single
+  `guidance_and_generation` with phase_1_guidance (verbatim text) and
+  phase_2_generate_files (gated on user confirmation), recreating v0.29.1's
+  embedded generation gate pattern
+- Updated `procedure_control_flow.required_sequence` to reflect merged structure
+- Updated top-level `_notes` field convention (removed `_then` reference)
+- Sequence items reduced from 8 → 6 by merging related concerns
+
+---
+
 v0.36.0 – 2026-02-13
 
 FIX: 5 issues found during end-to-end testing of mentor_generator.json
