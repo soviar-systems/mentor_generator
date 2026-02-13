@@ -1,3 +1,17 @@
+v0.36.0 – 2026-02-13
+
+FIX: 5 issues found during end-to-end testing of mentor_generator.json
+
+- Renamed "then" → "_then" in all 10 question steps to prevent LLMs from printing "STOP. Wait for user response." as visible output
+- Added explicit FIELD CONVENTION rule in top-level _notes: underscore-prefixed fields are internal and must never be printed
+- Added 5th validation check (template_completeness) to deep_pedagogical_self_validation
+- Enhanced verbal_validation_report to require per-check reasoning (references deep_pedagogical_self_validation dynamically)
+- Rewrote session-ending guidance to cover 3 scenarios: user-initiated, natural completion, context-limit degradation
+- Added note about attaching additional files alongside core ones in "Why One course_history File?" section
+- Replaced false claim about AI detecting file errors with honest guidance (backup copy + online JSON validator)
+
+---
+
 v0.35.0 – 2026-02-13
 
 FEATURE: Restore human-like traits + single-file course_history architecture
