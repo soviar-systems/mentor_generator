@@ -1,3 +1,27 @@
+v0.38.0 – 2026-02-13
+
+FIX: 5 questionnaire bugs causing inconsistent step execution
+
+Root cause: mixed question formats (bare strings vs objects), missing
+greeting-to-Q1 transition, no file attachment handling, step count
+contradiction, and phase-step misalignment in procedure_control_flow.
+
+- Fixed step count: top-level _notes said "10 steps" but actual count is 11
+  (greeting + 9 questions + 1 mapping confirmation) — now consistent with
+  state_tracker and CRITICAL_TURN_TAKING
+- Realigned procedure_control_flow phases: Phase 1 = Steps 0-9 (collection),
+  Phase 2 = Step 10 (persona mapping + confirmation) — fixes logical
+  contradiction where confirmation preceded the mapping it was confirming
+- Normalized Q2-Q8 from bare strings to { "ask": "..." } objects — eliminates
+  format-switching that caused the AI to grab Q3's content when asked for Q2
+  (no _then fields added, safe from v0.36.0 regression)
+- Added on_response field to greeting_step — provides structural bridge from
+  greeting to Q1, preventing AI from reverting to generic assistant behavior
+- Added FILE_AS_ANSWER rule to _notes — instructs AI to treat file uploads
+  as answers, extract relevant info, and advance (not re-ask)
+
+---
+
 v0.37.0 – 2026-02-13
 
 FIX: 4 structural regressions causing degraded LLM behavior
