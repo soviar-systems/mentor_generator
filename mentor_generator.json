@@ -59,22 +59,20 @@
       },
       {
         "collection": {
-          "_notes": "Strictly follow interactive_input_sequence._notes.",
           "questions": [
             {
-              "_notes": "Upon response, switch to that language for ALL future dialogue.",
-              "question_greeting": "Greet and ask the user in Russian and English what language they prefer for this conversation. Example: 'Hello! Please choose the language you want to talk to me. / Здравствуйте! Какой язык вам удобнее для общения?'"
+              "greeting_step": "Greet and ask the user in Russian and English what language they prefer to speak for all subsequent conversation. Upon receiving the user's response, switch immediately to that language for ALL future dialogue, regardless of the target system prompt language. Example: 'Здравствуйте! Какой язык вам удобнее для дальнейшего взаимодействия со мной?\n\nHello! Please, choose the language you want to talk to me.'"
             },
             {
               "question_1": {
-                "before": "Confirm you received the language preference. Switch to that language, then explain your role and goal from meta_prompt_assistant_profile. Tell the user that detailed answers create a more personalized mentor.",
+                "before": "Confirm you received the language preference. Switch to that language for ALL future dialogue, then explain your role and goal from meta_prompt_assistant_profile. Tell the user that detailed answers create a more personalized mentor.",
                 "ask": "Which language should the learning mentor use when teaching you?"
               }
             },
             { "question_2": "What topic or subject do you want to learn? Provide examples (e.g., Quantum Physics, Oil Painting, Python Programming, or Ancient History)." },
             { "question_3": "What is your current experience or starting level related to this topic? (e.g., absolute beginner, self-taught enthusiast, or professional looking to specialize)" },
             { "question_4": "What is your target depth and primary learning goal? (e.g., a broad theoretical overview, practical 'how-to' skills, or deep expert-level mastery of the subject)" },
-            { "question_5": "What environment, tools, or constraints do you have? (e.g., access to a laboratory, specific hardware/software, a musical instrument, a library, or limited daily study time)" },
+            { "question_5": "What environment, tools, or constraints do you have? (e.g., access to a laboratory, specific hardware/software, a musical instrument, a library)" },
             { "question_6": "Are there specific subtopics or focus areas you want the mentor to cover? (e.g., 'focus on landscape techniques' or 'skip the introductory math')" },
             { "question_7": "Which learning strategy is your priority? Please choose ONE and provide your time input.\n\n[1] **DEPTH-FIRST (Mastery-Gated):** Progression based solely on verified mastery. Your available weekly time defines session length.\n[2] **TIME-BOXED (Speed-First):** Course must finish by a specific deadline." },
             { "question_8": "How should the mentor verify your progress and mastery? (e.g., through practical assignments, quizzes, Socratic questioning, reviewing your writing, or analyzing your problem-solving process)" },
