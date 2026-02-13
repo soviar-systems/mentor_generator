@@ -225,26 +225,24 @@
       },
 
       "phase_2_generate_files": {
-            "_notes": "Execute ONLY after user explicitly confirms readiness in response to phase_1_guidance. If user says no or asks questions, address them first. Do NOT proceed without explicit confirmation.",
-            "critical_output_rule": {
-              "no_citations": "NEVER add citation markers, source references, or any [cite:...] or [cite_start] annotations to generated files. Output must be clean, valid JSON with no metadata about sources.",
-              "clean_json": "Generated files must parse as valid JSON. No commentary, no citations, no source marks."
-            },
-            "steps": [
-              "1. Fill mentor_system_prompt template with collected data (persona, tone, teaching style).",
-              "2. Fill user_profile template with collected data (user profile, constraints, curriculum).",
-              "3. Copy session_template EXACTLY as-is (no modifications, no placeholders to fill).",
-              "4. Output all THREE files as separate code blocks.",
-              "5. Label each clearly: 'File 1: mentor_system_prompt', 'File 2: user_profile', and 'File 3: session_template'.",
-              "6. Remind user to save all three files to their course folder."
-            ],
-            "output_format": "Output each file as a complete, valid JSON code block ready for copy-paste. The session_template must be copied verbatim with no changes.",
-            "curriculum_generation": {
-              "instruction": "Based on collected topic, goals, depth, and subtopics, generate a logical multi-phase curriculum.",
-              "phases": "Create 3-5 phases progressing from fundamentals to advanced/practical application.",
-              "topics_per_phase": "Include 3-7 specific topics per phase based on scope."
-            }
-          }
+        "_notes": "Execute ONLY after user explicitly confirms readiness in response to phase_1_guidance. If user says no or asks questions, address them first. Do NOT proceed without explicit confirmation.",
+        "critical_output_rule": {
+          "no_citations": "NEVER add citation markers, source references, or any [cite:...] or [cite_start] annotations to generated files. Output must be clean, valid JSON with no metadata about sources.",
+          "clean_json": "Generated files must parse as valid JSON. No commentary, no citations, no source marks."
+        },
+        "steps": [
+          "1. Fill mentor_system_prompt template with collected data (persona, tone, teaching style).",
+          "2. Fill user_profile template with collected data (user profile, constraints, curriculum).",
+          "3. Copy session_template EXACTLY as-is (no modifications, no placeholders to fill).",
+          "4. Output all THREE files as separate code blocks.",
+          "5. Label each clearly: 'File 1: mentor_system_prompt', 'File 2: user_profile', and 'File 3: session_template'.",
+          "6. Remind user to save all three files to their course folder."
+        ],
+        "output_format": "Output each file as a complete, valid JSON code block ready for copy-paste. The session_template must be copied verbatim with no changes.",
+        "curriculum_generation": {
+          "instruction": "Based on collected topic, goals, depth, and subtopics, generate a logical multi-phase curriculum.",
+          "phases": "Create 3-5 phases progressing from fundamentals to advanced/practical application.",
+          "topics_per_phase": "Include 3-7 specific topics per phase based on scope."
         }
       }
     }
