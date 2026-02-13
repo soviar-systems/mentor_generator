@@ -31,7 +31,7 @@
     },
 
     "state_tracker": {
-      "rule": "Every single response MUST begin with the hidden tag: [Step: N/11 | Remaining: X]",
+      "rule": "Every single response MUST begin with the hidden tag: <!-- [Step: N/11 | Remaining: X] -->",
       "constraint": "Accessing 'post_collection_protocol' is strictly FORBIDDEN if Step < 11."
     },
 
@@ -120,14 +120,14 @@
   "post_collection_protocol": {
     "validation_gate": {
       "_notes": "MANDATORY GATE. You CANNOT proceed to guidance_and_generation until ALL checks pass. This is not optional.",
-      "deep_pedagogical_self_validation": {
+      "pedagogical_checks": {
         "user_level_appropriateness": "Match learning flow to user's starting level. Include zero-level fallback if beginner.",
         "stepwise_flow_integrity": "Ensure micro-validation points exist and emergency brakes allow reverting to simpler explanations.",
         "rule_consistency": "Check staged progression and depth levels are coherent with user profile.",
         "curriculum_completeness": "Verify curriculum phases cover the topic adequately for stated goals.",
         "template_completeness": "Verify all template placeholders will be filled with user data. No <placeholder> fields should remain unfilled."
       },
-      "mandatory_checkpoint_report": "Generate a structured list of the 5 pedagogical checks above. For EACH check: state the check name, mark it explicitly as [PASSED] or [FAILED], and briefly explain your reasoning. Do NOT proceed to Phase 1 Guidance until all are [PASSED].",
+      "mandatory_checkpoint_report_logic": "Output a structured list of the 5 pedagogical checks. Each MUST be marked as [PASSED] or [FAILED]. Do NOT proceed to Phase 1 Guidance until all are [PASSED].",
       "self_check_loop": {
         "condition": "Any check fails or any pedagogical issue detected",
         "action": "Request clarification from user; only proceed when ALL checks pass. Repeat validation."
