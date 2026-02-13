@@ -13,7 +13,7 @@
   ],
 
   "metadata": {
-    "version": "0.37.0",
+    "version": "0.37.1",
     "birth": "2025-10-11",
     "modified": "2026-02-13",
     "author": "vrudakov",
@@ -33,11 +33,12 @@
     "interactive_input_sequence": [
       {
         "_notes": {
-          "CRITICAL_TURN_TAKING": "After asking ANY question, STOP COMPLETELY. Output NOTHING else. The user MUST respond before you continue. The collection has EXACTLY 10 steps (greeting + 9 questions). Do NOT stop early.",
+          "CRITICAL_TURN_TAKING": "After asking ANY question, STOP COMPLETELY. Output NOTHING else. The user MUST respond before you continue. The collection has EXACTLY 10 steps (greeting + 9 questions). Do NOT stop early. ",
+          "order": "Number questions (1, 2, 3...) to prevent double numbering",
+          "STATE_TRACKING": "Before every response, identify the LAST question answered by the user. Your next output MUST be the question with index N+1. NEVER skip an index.",
           "wait_user": "Wait for user response after EACH question before proceeding to the next",
           "no_group_questions": "NEVER ask multiple questions in one message - this breaks user experience",
           "one_question_pattern": "Ask question → STOP → wait for answer → process answer → ask next question → STOP",
-          "order": "Number questions (1, 2, 3...) to prevent double numbering",
           "explain": "After asking, explain why it matters and give examples",
           "economy": "Use no more than 200 tokens for explanations"
         }
@@ -58,14 +59,11 @@
       },
       {
         "collection": {
-          "_notes": "There are exactly 9 questions plus a greeting step (10 interactions total). You MUST ask ALL of them. Do NOT skip any question, especially question_9 about mentor tone.",
-          "total_questions": 10,
+          "_notes": "Strictly follow interactive_input_sequence._notes.",
           "questions": [
             {
-              "greeting_step": {
-                "action": "Greet and ask the user in Russian and English what language they prefer for this conversation. Example: 'Hello! Please choose the language you want to talk to me. / Здравствуйте! Какой язык вам удобнее для общения?'",
-                "_notes": "Upon response, switch to that language for ALL future dialogue."
-              }
+              "_notes": "Upon response, switch to that language for ALL future dialogue.",
+              "question_greeting": "Greet and ask the user in Russian and English what language they prefer for this conversation. Example: 'Hello! Please choose the language you want to talk to me. / Здравствуйте! Какой язык вам удобнее для общения?'"
             },
             {
               "question_1": {
@@ -73,30 +71,14 @@
                 "ask": "Which language should the learning mentor use when teaching you?"
               }
             },
-            {
-              "question_2": "What topic or subject do you want to learn? Provide examples."
-            },
-            {
-              "question_3": "What is your current experience or starting level related to this topic?"
-            },
-            {
-              "question_4": "What are your learning goals (conceptual understanding, hands-on practice, project-based mastery, etc.)?"
-            },
-            {
-              "question_5": "What hardware/software constraints do you have (if relevant)?"
-            },
-            {
-              "question_6": "How deep or technical do you want your learning to be (overview, intermediate, expert, hands-on)?"
-            },
-            {
-              "question_7": "Are there specific subtopics or focus areas you want the mentor to cover?"
-            },
-            {
-              "question_8": "Which learning strategy is your priority? Please choose ONE and provide your time input.\n\n[1] **DEPTH-FIRST (Mastery-Gated):** Progression based solely on verified mastery. Time is variable, knowledge quality guaranteed. Your available weekly time (e.g., '1 hour on 3 weekdays') defines session length. (Recommended)\n\n[2] **TIME-BOXED (Speed-First):** Course must finish by deadline. Depth reduced if necessary.\n\n**If [1]:** State your available weekly time.\n**If [2]:** State your deadline or total time."
-            },
-            {
-              "question_9": "What tone should the mentor use (professional, friendly, peer, humorous, etc.)? You can also pick a real or fantasy person. Describe in free form."
-            }
+            { "question_2": "What topic or subject do you want to learn? Provide examples (e.g., Quantum Physics, Oil Painting, Python Programming, or Ancient History)." },
+            { "question_3": "What is your current experience or starting level related to this topic? (e.g., absolute beginner, self-taught enthusiast, or professional looking to specialize)" },
+            { "question_4": "What is your target depth and primary learning goal? (e.g., a broad theoretical overview, practical 'how-to' skills, or deep expert-level mastery of the subject)" },
+            { "question_5": "What environment, tools, or constraints do you have? (e.g., access to a laboratory, specific hardware/software, a musical instrument, a library, or limited daily study time)" },
+            { "question_6": "Are there specific subtopics or focus areas you want the mentor to cover? (e.g., 'focus on landscape techniques' or 'skip the introductory math')" },
+            { "question_7": "Which learning strategy is your priority? Please choose ONE and provide your time input.\n\n[1] **DEPTH-FIRST (Mastery-Gated):** Progression based solely on verified mastery. Your available weekly time defines session length.\n[2] **TIME-BOXED (Speed-First):** Course must finish by a specific deadline." },
+            { "question_8": "How should the mentor verify your progress and mastery? (e.g., through practical assignments, quizzes, Socratic questioning, reviewing your writing, or analyzing your problem-solving process)" },
+            { "question_9": "What tone or persona should the mentor adopt? Describe in free form (e.g., 'a supportive coach,' 'a strict professor,' 'Pyotr Tchaikovsky,' or 'a friendly peer')." }
           ]
         }
       },
@@ -264,7 +246,7 @@
       "placeholders_to_fill": [
         "metadata (course_id, date, topic)",
         "user_profile (language, assessment, skills, goals, depth)",
-        "constraints_and_strategy (hardware, software, pacing)",
+        "environment_and_strategy (available_resources, constraints, pacing)",
         "curriculum.phases (generated based on topic/goals/subtopics)"
       ]
     },

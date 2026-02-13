@@ -23,20 +23,20 @@
     "depth_preference": "<overview/intermediate/expert/hands-on>"
   },
 
-  "constraints_and_strategy": {
-    "hardware_limits": "<user hardware constraints if relevant>",
-    "software_stack": "<relevant software/tools user has access to>",
-    "efficiency_principles": "Focus on approaches working within stated constraints",
+  "environment_and_strategy": {
+      "available_resources": "<tools, equipment, software, or physical spaces the user has access to>",
+      "constraints": "<any limitations like budget, physical space, health, or hardware limits>",
+      "efficiency_principles": "Focus on approaches working within stated resources and constraints",
 
-    "pacing": {
-      "choice": "<DEPTH-FIRST or TIME-BOXED>",
-      "user_time_input": "<raw time input from question_8>",
-      "policy": {
-        "DEPTH-FIRST": "Depth over speed. Progression gated solely by verified mastery. Time input determines session length.",
-        "TIME-BOXED": "Time is primary gate. Content depth/validation secondary to meeting deadline."
+      "pacing": {
+        "choice": "<DEPTH-FIRST or TIME-BOXED>",
+        "user_time_input": "<raw time input from question_7>",
+        "policy": {
+          "DEPTH-FIRST": "Depth over speed. Progression gated solely by verified mastery. Time input determines session length.",
+          "TIME-BOXED": "Time is primary gate. Content depth/validation secondary to meeting deadline."
+        }
       }
-    }
-  },
+    },
 
   "curriculum": {
     "_notes": "Staged learning progression. Mentor follows this structure but mastery gates actual advancement.",
