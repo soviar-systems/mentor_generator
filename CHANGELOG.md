@@ -1,3 +1,21 @@
+v0.39.0 – 2025-02-14
+
+STRUCTURAL SIMPLIFICATION: Restore execution reliability
+
+Root cause: v0.38.0 was over-engineered into a 4-phase FSM with heartbeat 
+tags, causing Qwen and Gemini to describe the file instead of executing it.
+
+- Restored single linear sequence in interactive_input_sequence
+- Added ACTIVATION command to description field to force execution mode
+- Removed state_tracker and HTML heartbeat comments
+- Simplified procedure_control_flow to a required_sequence checklist
+- Flattened collection: removed {questions: [...]} nesting and restored bare strings for Q2-Q9
+- Merged persona confirmation into persona_mapping_protocol
+- Moved validation, guidance, and generation back into the primary linear sequence
+- Flattened guidance structure to reduce nesting levels
+
+---
+
 v0.38.0 – 2026-02-13
 
 FIX: 5 questionnaire bugs causing inconsistent step execution
