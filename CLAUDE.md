@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Mentor Generator is a **meta-prompt engineering project** that creates personalized AI learning mentors. The system generates three configuration files that define a customized learning experience.
+Mentor Generator is a **meta-prompt engineering project** that creates personalized AI learning mentors. The system generates a single YAML configuration file that defines a customized learning experience.
 
-This is **not a traditional software project** - there is no build system, no package manager, no automated tests. The JSON/template files are the product.
+This is **not a traditional software project** - there is no build system, no package manager, no automated tests. The JSON/YAML files are the product.
 
 ## Architecture
 
@@ -14,11 +14,7 @@ This is **not a traditional software project** - there is no build system, no pa
 
 ```
 mentor_generator/
-├── mentor_generator.json                  # Meta-prompt (questionnaire only)
-├── templates/
-│   ├── mentor_system_prompt.template.md   # Template for mentor behavior rules
-│   ├── user_profile.template.md           # Template for user profile/curriculum
-│   └── session.template.md                # Template for session records
+├── mentor_generator.json                  # Meta-prompt (questionnaire + embedded template)
 ├── docs/
 │   └── adr/                               # Architecture Decision Records
 ├── misc/
@@ -33,69 +29,57 @@ mentor_generator/
 
 ```
 user_course/
-├── mentor_system_prompt    # Static mentor rules (attach every session)
-├── user_profile            # User profile + curriculum (attach every session)
-├── session_template        # Session record format (attach every session)
-└── course_history          # Append-only file with all session records
+├── mentor_system_prompt    # Complete mentor file: rules, profile, curriculum, session record template (YAML)
+└── course_history          # Append-only file with all session records (JSON)
 ```
 
 ### Core Files
 
 #### `mentor_generator.json` (Meta-Prompt)
 
-Contains ONLY the questionnaire logic:
+Contains the questionnaire logic AND the embedded template:
 - **meta_prompt_logic** - Instructions for conducting 9-question collection
 - **interactive_input_sequence** - The questions and flow control
 - **validation** - Pedagogical validation checks
 - **persona_mapping_protocol** - Translates persona preferences into instructions
 - **guidance_for_user** - Hardcoded user instructions (printed verbatim)
-- **file_generation_protocol** - How to fill and output templates
-- **template_references** - Points to template files
+- **file_generation_protocol** - How to fill template and output as YAML
+- **templates.mentor_system_prompt** - The single merged template (JSON object, output as YAML)
+- **template_references** - Documents the template and its placeholders
 
-#### `templates/mentor_system_prompt.template.md`
+#### `templates.mentor_system_prompt` (Embedded Template)
 
-Defines mentor behavior (filled once during generation):
+Single template that produces the complete mentor file (output as YAML):
 - **mentor_profile** - Persona, tone, teaching style
 - **mentor_self_control** - Self-correction, peer review checks, anti-praise examples
+- **user_profile** - Language, assessment, skills, goals, user-maintained fields
+- **environment_and_strategy** - Resources, constraints, pacing
+- **curriculum** - Phased learning progression
 - **course_history_protocol** - How to read course_history and select session protocol
 - **session_protocols** - First session vs subsequent session behavior
 - **interaction_flow** - Turn-taking, emergency brakes
 - **learning_framework** - Mastery-gated progression rules
 - **context_management** - Single-file course_history approach (see ADR-26001)
-- **session_output_protocol** - How to output session records for course_history
-
-#### `templates/user_profile.template.md`
-
-Defines user-specific data (filled once during generation, can be updated by user):
-- **user_profile** - Language, assessment, skills, goals
-- **constraints_and_strategy** - Hardware, pacing choice
-- **curriculum** - Phased learning progression
-
-#### `templates/session.template.md`
-
-Defines session record structure (mentor fills at end of each session):
-- **position** - Current phase, topic covered, next topic, progress
-- **content** - Summary, tasks completed, projects, resources suggested
-- **mastery** - Concepts validated/struggling, validation method
-- **observations** - Learning patterns, user problems, mentor failures
-- **mentor_notes** - Notes for future sessions
+- **session_output_protocol** - How to output session records, with embedded session record template
 
 ### Architectural Principles (from ADRs)
 
 These principles are derived from accepted ADRs in `docs/adr/`. When a new ADR is accepted, update this section to reflect its key decisions.
 
-**ADR-26001: Single-file course_history** — All session records live in one append-only `course_history` file. Users attach 3-4 files per session, not N. Never modify existing records, only append.
+**ADR-26001: Single-file course_history** — All session records live in one append-only `course_history` file. Users attach 1-2 files per session, not N. Never modify existing records, only append.
 
 **ADR-26002: Strict placeholder injection** — The generator AI is a compiler, not an author. Templates are immutable infrastructure. The compiler replaces `<placeholder>` tokens with user data and touches nothing else. `preservation_first` and `structural_parity` in `mentor_generator.json` enforce this.
 
 **ADR-26003: Instruction budget** — Every instruction added to a template must pass a cost-benefit test. Compiler instructions live in `mentor_generator.json` (the compiler's manual), not scattered across templates. Don't duplicate guardrails — one clear rule in the meta-prompt beats five scattered markers in templates. Adding too much structural noise causes LLMs to describe files instead of executing them (v0.38.0 → v0.39.0 lesson).
 
-**ADR-26004: Templates are output schemas** — Every field in a template is one of four types: literal value (no prefix, no brackets — copied verbatim), placeholder (`<...>` — replaced by compiler), internal guidance (`_`-prefixed keys like `_notes`, `_example_*` — preserved in output as guidance for the mentor AI), or generator-only guidance (currently none — all `_`-prefixed fields travel to output). No unprefixed "example" or "illustrative" fields allowed.
+**ADR-26004: Templates are output schemas** — Every field in a template is one of four types: literal value (no prefix, no brackets — copied verbatim), placeholder (`<...>` — replaced by compiler), internal guidance (`_`-prefixed keys like `_notes`, `_template_notes`, `_example_*` — preserved in output as guidance for the mentor AI), or generator-only guidance (currently none — all `_`-prefixed fields travel to output). No unprefixed "example" or "illustrative" fields allowed.
+
+**ADR-26005: Single-file output with embedded templates** — Templates are embedded in the meta-prompt, not external files. Generated output is ONE file (mentor_system_prompt) containing all mentor rules, user profile, curriculum, and session record template. Output as YAML to reduce token noise. User manages 2 files total (mentor_system_prompt + course_history). Solves both the generation-phase drift (templates as context) and learning-session drift (session template as context).
+
+**ADR-26007: Format is architecture** — Format affects LLM behavior: structural noise tokens consume attention budget, and training-data distribution biases processing mode (JSON → data parsing, YAML → instruction following). Meta-prompt stays JSON (compiler input, needs validation). Generated output is YAML (runtime instructions, lowest noise with key-value addressability). Session records are JSON (structured data for field scanning).
 
 Additional patterns:
 - **Separation of Concerns**: Meta-prompt and mentor are different roles in different files
-- **Reusable Mentor Templates**: Same mentor_system_prompt works for multiple users
-- **Format-Agnostic**: JSON shown, but YAML/Markdown/text equally valid
 
 ### Learning Strategies
 
@@ -106,16 +90,16 @@ Additional patterns:
 
 ### Creating a Mentor (Meta-Prompt Phase)
 
-1. Copy `mentor_generator.json` content
+1. Copy `mentor_generator.json` content (optionally convert to YAML with `prepare_prompt.py`)
 2. Paste into powerful LLM chat
 3. Answer 9 questions
-4. AI validates and outputs THREE files
-5. Save all files to course folder
+4. AI validates and outputs ONE YAML file
+5. Save file to course folder
 6. Create an empty `course_history` file
 
 ### Learning Sessions
 
-1. Open new chat, attach `mentor_system_prompt` + `user_profile` + `session_template` + `course_history`
+1. Open new chat, attach `mentor_system_prompt` (+ `course_history` for session 2+)
 2. Say "Let's continue" (or "Let's start" for first session)
 3. Learn with mastery-gated progression
 4. At session end, mentor outputs a session record

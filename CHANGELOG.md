@@ -1,3 +1,79 @@
+v0.41.0 – 2026-02-14
+
+ARCHITECTURE: Merge generated output into single YAML file (ADR-26005)
+
+Problem: v0.40.0 testing revealed that web chat LLMs treat attached files as
+context, not source code. The 3-file generated output (mentor_system_prompt,
+user_profile, session_template) suffered from session template drift — the
+mentor generated its own session record format instead of following the
+attached template. Users also had to manage 4 files and attach 3-4 per session.
+
+Solution: Merge all generated output into ONE file. Embed all templates in the
+meta-prompt. Output as YAML to reduce token noise vs JSON.
+
+Generated output: 1 YAML file (mentor_system_prompt) containing behavior rules,
+user profile, curriculum, and session record template. User manages 2 files
+total (mentor_system_prompt + course_history).
+
+Meta-prompt:
+- Embedded all three templates into templates.mentor_system_prompt (single
+  merged template combining mentor rules, user profile, curriculum, and
+  session record template)
+- Added user-maintained fields: learning_style_observed, known_difficulties
+  (start empty, user updates from session observations)
+- Rewrote file_generation.steps for single YAML output
+- Rewrote guidance_for_user for 1-file + course_history workflow
+- Rewrote template_references for single template
+- Updated course_history_protocol.on_start for 2-file workflow
+- Updated context_management.file_structure for 2 files
+- Updated session_output_protocol.template_reference to embedded template
+- Added course_id to metadata (from former user_profile template)
+
+Deleted files:
+- templates/mentor_system_prompt.template.md (content merged into meta-prompt)
+- templates/user_profile.template.md (content merged into meta-prompt)
+- templates/session.template.md (content embedded in session_output_protocol)
+
+ADR:
+- Revised ADR-26005: expanded from "embed templates" to "single-file output
+  with embedded templates" covering both generation and learning session phases
+
+File count comparison:
+| Action             | v0.40.0         | v0.41.0       |
+|--------------------|-----------------|---------------|
+| Generated output   | 3 files         | 1 file        |
+| First session      | 3 attachments   | 1 attachment  |
+| Subsequent session | 4 attachments   | 2 attachments |
+| Files managed      | 4               | 2             |
+
+Bugfixes (post-test):
+- Fixed duplicate step numbering in guidance_for_user (two "2." steps for
+  subsequent sessions — caused Qwen to merge steps, losing paste-vs-attach
+  distinction)
+- Strengthened verification step 3 wording: "exact top-level keys (do not
+  rename or abbreviate)" to catch key renames like metadata→meta
+
+Testing (Qwen3-Max, 2026-02-15):
+- Questionnaire: all 9 questions asked correctly, persona mapping and
+  validation gate executed properly, guidance printed (with minor rewrites)
+- Compiler fidelity: ~95%. All 15 top-level sections present, literal values
+  preserved verbatim, placeholder substitution correct, curriculum generated
+  with proper structure (5 phases)
+- Remaining fidelity issues (5):
+  1. metadata key renamed to "meta" (also missing YAML colon — invalid YAML)
+  2. pre_response_peer_review.action field dropped entirely
+  3. anti_praise_examples[0]._notes field dropped (preservation_first violation)
+  4. structure_data key truncated to "structure_" (invalid YAML)
+  5. guidance_for_user rewritten instead of verbatim (caused by our numbering bug)
+- Improvement vs v0.40.0: catastrophic drift eliminated (v0.40.0 dropped 10
+  sections, rewrote immutable fields). Single-file architecture works.
+
+New ADR:
+- ADR-26007: Format is Architecture — YAML for runtime instructions, JSON for
+  compiler input and data records. Full analysis in ai_engineering_book article.
+
+---
+
 v0.40.0 – 2026-02-14
 
 COMPLETE: Strict placeholder injection across templates (ADR-26002)
@@ -29,7 +105,7 @@ v0.39.0 – 2025-02-14
 
 STRUCTURAL SIMPLIFICATION: Restore execution reliability
 
-Root cause: v0.38.0 was over-engineered into a 4-phase FSM with heartbeat 
+Root cause: v0.38.0 was over-engineered into a 4-phase FSM with heartbeat
 tags, causing Qwen and Gemini to describe the file instead of executing it.
 
 - Restored single linear sequence in interactive_input_sequence
