@@ -29,7 +29,7 @@ An architecture that relies on the LLM reading external files and producing stru
 
 ### Generation phase problem
 
-The separate template files introduced in v0.31.0 assumed the generator could perform file transformation — an agentic capability that web chat LLMs do not reliably have. Testing confirmed this: some models approximate the behavior, others catastrophically diverge (see `docs/ARCHITECTURE_POSTMORTEM_v0.40.md` for evidence).
+The separate template files introduced in v0.31.0 assumed the generator could perform file transformation — an agentic capability that web chat LLMs do not reliably have. Testing confirmed this: some models approximate the behavior, others catastrophically diverge (see `architecture/postmortem/ARCHITECTURE_POSTMORTEM_v0.40.md` for evidence).
 
 ### Learning session problem
 
@@ -103,7 +103,7 @@ The template is stored as JSON in the meta-prompt (for validation with `jq`/Pyth
 
 ## References
 
-- Evidence and root cause analysis: `docs/ARCHITECTURE_POSTMORTEM_v0.40.md`
+- Evidence and root cause analysis: `architecture/postmortem/ARCHITECTURE_POSTMORTEM_v0.40.md`
 - Instruction budget: ADR-26003
 - Compiler role: ADR-26002
 - v0.30 postmortem Principle 10: "Attached files are context, not source code"

@@ -88,7 +88,7 @@ Architecture post-mortems follow a fixed structure. Each postmortem is a link in
 
 ### File Convention
 
-- Location: `docs/ARCHITECTURE_POSTMORTEM_v{VERSION}.md`
+- Location: `architecture/postmortem/ARCHITECTURE_POSTMORTEM_v{VERSION}.md` (updated by ADR-26008)
 - Version in filename: the version where the problem was discovered/investigated
 - Author line includes both human and AI participants
 
@@ -115,9 +115,9 @@ Architecture post-mortems follow a fixed structure. Each postmortem is a link in
 
 ## References
 
-- `docs/ARCHITECTURE_POSTMORTEM_v0.30.md` — Principles 1-8 (constraints over instructions, append-only, minimal output, etc.)
-- `docs/ARCHITECTURE_POSTMORTEM_v0.32.md` — Data flow model (session files as only dynamic data, synthesis over storage)
-- `docs/ARCHITECTURE_POSTMORTEM_v0.40.md` — Principles 9-13 (execution environments, generation as default, instruction decay)
+- `architecture/postmortem/ARCHITECTURE_POSTMORTEM_v0.30.md` — Principles 1-8 (constraints over instructions, append-only, minimal output, etc.)
+- `architecture/postmortem/ARCHITECTURE_POSTMORTEM_v0.32.md` — Data flow model (session files as only dynamic data, synthesis over storage)
+- `architecture/postmortem/ARCHITECTURE_POSTMORTEM_v0.40.md` — Principles 9-13 (execution environments, generation as default, instruction decay)
 
 ## Participants
 

@@ -15,7 +15,7 @@ This is **not a traditional software project** - there is no build system, no pa
 ```
 mentor_generator/
 ├── mentor_generator.json                  # Meta-prompt (questionnaire + embedded template)
-├── docs/
+├── architecture/
 │   ├── adr/                               # Architecture Decision Records
 │   ├── postmortem/                         # Version retrospectives (historical records)
 │   └── research/                           # Cross-cutting analysis and synthesis
@@ -66,7 +66,7 @@ Single template that produces the complete mentor file (output as YAML):
 
 ### Architectural Principles (from ADRs)
 
-These principles are derived from accepted ADRs in `docs/adr/`. When a new ADR is accepted, update this section to reflect its key decisions.
+These principles are derived from accepted ADRs in `architecture/adr/`. When a new ADR is accepted, update this section to reflect its key decisions.
 
 **ADR-26001: Single-file course_history** — All session records live in one append-only `course_history` file. Users attach 1-2 files per session, not N. Never modify existing records, only append.
 
@@ -79,6 +79,8 @@ These principles are derived from accepted ADRs in `docs/adr/`. When a new ADR i
 **ADR-26005: Single-file output with embedded templates** — Templates are embedded in the meta-prompt, not external files. Generated output is ONE file (mentor_system_prompt) containing all mentor rules, user profile, curriculum, and session record template. Output as YAML to reduce token noise. User manages 2 files total (mentor_system_prompt + course_history). Solves both the generation-phase drift (templates as context) and learning-session drift (session template as context).
 
 **ADR-26007: Format is architecture** — Format affects LLM behavior: structural noise tokens consume attention budget, and training-data distribution biases processing mode (JSON → data parsing, YAML → instruction following). Meta-prompt stays JSON (compiler input, needs validation). Generated output is YAML (runtime instructions, lowest noise with key-value addressability). Session records are JSON (structured data for field scanning).
+
+**ADR-26008: Architecture directory taxonomy** — All architectural documentation lives in `architecture/` (not generic `docs/`), organized into three subdirectories by document type: `adr/` (decisions), `postmortem/` (version retrospectives), `research/` (cross-cutting analysis). Each has its own naming convention and lifecycle. No files at the `architecture/` root.
 
 Additional patterns:
 - **Separation of Concerns**: Meta-prompt and mentor are different roles in different files
@@ -141,7 +143,7 @@ feat: add greeting placeholders to session protocols (v0.40.0)
 - Added: `templates/mentor_system_prompt.template.md` — greeting_text placeholder in welcome_message for persona injection
 - Fixed: `templates/session.template.md` — _template_notes still described per-file sessions from before v0.35.0
 - Updated: `mentor_generator.json` — persona_mapping_protocol rules to reference new placeholder fields
-- Created: `docs/adr/adr_26003_instruction_budget_llm_context_limits.md` — instruction budget principle
+- Created: `architecture/adr/adr_26003_instruction_budget_llm_context_limits.md` — instruction budget principle
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
