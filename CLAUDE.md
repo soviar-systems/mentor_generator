@@ -16,7 +16,9 @@ This is **not a traditional software project** - there is no build system, no pa
 mentor_generator/
 ├── mentor_generator.json                  # Meta-prompt (questionnaire + embedded template)
 ├── docs/
-│   └── adr/                               # Architecture Decision Records
+│   ├── adr/                               # Architecture Decision Records
+│   ├── postmortem/                         # Version retrospectives (historical records)
+│   └── research/                           # Cross-cutting analysis and synthesis
 ├── misc/
 │   └── plan/                              # Implementation plans (saved for history)
 │       └── implemented/                   # Plans moved here after completion
