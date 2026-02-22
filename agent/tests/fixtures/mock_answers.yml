@@ -1,0 +1,11 @@
+dialogue_language: English
+mentor_language: English
+topic: Python Programming
+experience_level: intermediate, self-taught with 2 years of scripting
+learning_goals: deep understanding of Python internals, decorators, metaclasses, async
+environment: Linux laptop, PyCharm, Python 3.12
+subtopics: focus on async/await patterns; skip basic syntax
+strategy: DEPTH-FIRST
+time_input: 45 min sessions
+mastery_method: Socratic questioning and code review
+persona: a senior Python developer who speaks plainly
