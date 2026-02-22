@@ -1,109 +1,152 @@
 # Mentor Generator
 
-Mentor Generator creates a personalized AI learning mentor tailored to your language, knowledge level, goals, and constraints.
-
-In a 5-minute conversation, it generates three configuration files that define your personal mentor. These files accompany you throughout your learning journey, tracking progress across sessions.
+Mentor Generator creates a personalized AI learning mentor tailored to your language, knowledge level, goals, and constraints. It outputs a single YAML configuration file that defines your personal mentor — personality, teaching rules, curriculum, and session record format — all in one place.
 
 > **Important notes:**
-> 1. AI models can hallucinate. The prompts contain many checks, but there is no 100% guarantee.
-> 2. Don't drag sessions out - change chats often to avoid context degradation.
+> 1. AI models can hallucinate. The system contains many checks, but there is no 100% guarantee.
+> 2. Don't drag learning sessions out — change chats often to avoid context degradation.
 > 3. This is an experiment, not a production-ready solution.
 
-## Quick Start
+## Quick Start (Agent CLI)
 
-1. Copy the contents of `mentor_generator.json`
-2. Paste into a powerful AI chat (see model recommendations below)
-3. Answer 9 questions about your learning goals
-4. Receive three files: `mentor_system_prompt`, `user_profile`, and `session_template`
-5. Create an empty `course_history` file
-6. Start learning sessions by attaching these files to new chats
+The primary way to use Mentor Generator is the Python CLI agent.
 
-> **Model recommendations:** Gemini Pro, Gemini Flash, DeepSeek, and Qwen3-Max start working immediately. ChatGPT often reads the file verbatim and asks what to do - not recommended.
+### Prerequisites
 
-## The File System
+- Python 3.10–3.13
+- [uv](https://docs.astral.sh/uv/) package manager
+- A Gemini API key ([get one here](https://aistudio.google.com/apikey))
 
-### Generated Files (You Create Once)
+### Installation
 
-| File | Purpose | When to Modify |
-|------|---------|----------------|
-| `mentor_system_prompt` | Mentor personality, teaching rules, behavior | Never |
-| `user_profile` | Your profile, constraints, curriculum | Rarely (only if constraints change) |
-| `session_template` | Format for session records | Never |
+```bash
+git clone https://github.com/lefthand67/mentor_generator.git
+cd mentor_generator
+uv sync
+```
 
-### Course History (Grows During Learning)
+### Configuration
 
-| File | Purpose | How It Works |
-|------|---------|--------------|
-| `course_history` | All session records in one file | Append new record after each session |
+Set your API key as an environment variable:
 
-**Key principle:** Session records are never modified. Each session appends a new record.
+```bash
+export GEMINI_API_KEY="your-api-key-here"
+```
 
-## Learning Workflow
+Or create a global config file at `~/.mentor.generator.config.yml`:
 
-### Starting a Session
+```yaml
+api_key_env: GEMINI_API_KEY
+```
 
-1. Open a **new chat** with your AI
-2. Attach `mentor_system_prompt`, `user_profile`, and `session_template`
-3. Attach `course_history` (from session 2 onwards)
-4. Say "Let's continue" or "Let's start"
+You can also create a local config `.mentor.generator.config.yml` in the project root to override settings per project.
 
-The mentor reads all files, synthesizes your history, and continues from where you left off.
+### Generate a Mentor
 
-### Ending a Session
+```bash
+uv run python -m agent.main
+```
 
-1. Signal session end ("Let's stop here", "End session", or reach a natural conclusion)
-2. Mentor outputs a new session record
-3. Append this record to your `course_history` file
+The agent walks you through 9 questions:
 
-### Why New Chats?
+| # | Question | Example Answer |
+|---|----------|----------------|
+| 0 | Preferred communication language | "English", "Русский" |
+| Q1 | Mentor's teaching language | "English" |
+| Q2 | Topic to learn | "Python for Data Analysis", "History of Byzantium" |
+| Q3 | Current experience level | "Beginner in programming but strong in math" |
+| Q4 | Target depth and learning goals | "Practical how-to skills with deep understanding" |
+| Q5 | Environment, tools, constraints | "Only laptop, Windows, 4 GB RAM" |
+| Q6 | Specific subtopics to cover | "NumPy arrays, SQL JOIN operations" |
+| Q7 | Learning strategy | DEPTH-FIRST (mastery-gated) or TIME-BOXED (deadline-driven) |
+| Q8 | Mastery verification method | "Practical assignments and Socratic questioning" |
+| Q9 | Mentor tone/persona | "Friendly but strict", "Like Richard Feynman" |
 
-AI chats have context limits. Starting fresh with your files attached gives the mentor full context without old conversation clutter degrading quality.
-
-## Answering the Questions
-
-The meta-prompt asks 9 questions. Answer clearly and specifically - vague answers yield poor personalization.
-
-| Question | How to Answer |
-|----------|---------------|
-| Language | "English", "Русский", or any language |
-| Topic | "Python for Data Analysis", "History of Byzantium" |
-| Experience Level | "Beginner in programming but strong in math" |
-| Learning Goals | "Practice through examples and conceptual clarity" |
-| Constraints | "Only laptop, Windows, 4 GB RAM" |
-| Depth | "Medium tech level, focus on reasoning" |
-| Subtopics | "NumPy arrays, SQL JOIN operations" |
-| Time/Strategy | "DEPTH-FIRST, 1 hour on 3 weekdays" or "TIME-BOXED, finish by March" |
-| Mentor Tone | "Friendly but strict", "Like Richard Feynman" |
-
-## Sharing Your Mentor
-
-The separation of files enables sharing:
-
-- Share your `mentor_system_prompt` with others learning the same topic
-- Each person creates their own `user_profile` and `course_history`
-- Same teaching style, personalized per user
-
-## File Format
-
-Files are shown in JSON, but the content can be converted to YAML, Markdown, or plain text. The structure matters, not the format.
-
-## Migration from v0.30.x
-
-If you have an existing monolithic JSON from previous versions:
-
-1. **Recommended:** Start fresh with the new system
-2. **Manual migration:** Extract relevant sections into the new file structure
-3. Your learning progress from old sessions cannot be automatically migrated
-
-## Folder Structure
+After you answer, the agent makes **one** LLM call, fills the template, validates the output, and writes two files:
 
 ```
-my_course/
-├── mentor_system_prompt     # Attach every session
-├── user_profile             # Attach every session
-├── session_template         # Attach every session
-└── course_history           # Append-only, attach from session 2+
+output/
+├── mentor_system_prompt.yml   # Your complete mentor configuration (YAML)
+└── course_history             # Empty file, grows during learning
 ```
+
+### CLI Options
+
+```bash
+# Full pipeline (questionnaire → API call → compile)
+uv run python -m agent.main
+
+# Skip questionnaire, reuse saved answers (re-call API)
+uv run python -m agent.main --skip-collect
+
+# Skip questionnaire + API, recompile from saved artifacts only
+uv run python -m agent.main --skip-collect --skip-api
+```
+
+Answers and API responses are cached in `.mentor.generator.artifacts/` so you can iterate on the compile step without re-answering questions or spending API calls.
+
+## How the Agent Works
+
+The agent runs a three-stage pipeline:
+
+```
+Collect (0 API calls)  →  Create (1 API call)  →  Compile (0 API calls)
+       CLI questionnaire       LLM generates           Template filling,
+       gathers 9 answers       creative content         validation, YAML output
+```
+
+1. **Collect** — CLI questionnaire gathers your answers (no API calls)
+2. **Create** — One LLM call generates creative content (persona, expertise, curriculum phases). The LLM returns labeled text blocks, not structured data
+3. **Compile** — Deterministic code parses the response, injects it into the template, validates structure, and writes YAML
+
+This architecture means the LLM is a **creative engine**, not a compiler. All structural decisions are made by code, eliminating template drift and format errors.
+
+## Learning Sessions
+
+After generating your mentor, see [agent/USAGE.md](agent/USAGE.md) for the full learning workflow — how to start sessions, continue from where you left off, and manage your course history.
+
+## Web Chat Workflow (Legacy)
+
+If you prefer not to install anything, you can use the original web-chat workflow:
+
+1. Copy the contents of `web_version/mentor_generator.json`
+2. Paste into a powerful AI chat (Gemini Pro, DeepSeek, Qwen3-Max)
+3. Answer 9 questions interactively
+4. The AI validates and outputs one YAML file
+5. Save the file and create an empty `course_history`
+
+> **Note:** The web-chat workflow is preserved for backward compatibility. The agent CLI is recommended — it produces more reliable output because structural decisions are made by code, not by the LLM.
+
+## Project Structure
+
+```
+mentor_generator/
+├── agent/                        # Python CLI (primary product)
+│   ├── main.py                   # Pipeline orchestrator
+│   ├── collector.py              # CLI questionnaire (0 API calls)
+│   ├── creative_engine.py        # Single LLM call + parser
+│   ├── template_engine.py        # Deterministic template filling
+│   ├── validator.py              # Structural validation
+│   ├── yaml_writer.py            # YAML output
+│   ├── settings.py               # Layered config
+│   ├── provider.py               # LLM provider abstraction
+│   ├── templates/                # Output schema template
+│   ├── USAGE.md                  # Post-generation user guide
+│   └── tests/                    # Golden-file tests (0 API calls)
+├── web_version/                  # Legacy web-chat workflow
+│   └── mentor_generator.json     # Original meta-prompt
+├── architecture/                 # ADRs, postmortems, research
+├── pyproject.toml
+└── CLAUDE.md
+```
+
+## Running Tests
+
+```bash
+uv run pytest agent/tests/ -v
+```
+
+All tests are offline (0 API calls) — they use golden fixtures to verify the pipeline.
 
 ## Example Projects
 
@@ -114,8 +157,8 @@ Real courses created with Mentor Generator:
 
 ## Pitfalls
 
-- **Weak models:** Always use top-tier AI models - weak models lose context quickly
-- **Vague answers:** Be specific in your responses during setup
+- **Weak models:** Use top-tier AI models for learning sessions — weak models lose context quickly
+- **Vague answers:** Be specific during setup — vague answers yield poor personalization
 - **Hallucinations:** Cross-check mentor advice with trusted sources
 - **Long sessions:** Change chats often to maintain quality
 
