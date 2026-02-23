@@ -24,7 +24,6 @@ class LiteLLMProvider(LLMProvider):
     """Universal LLM provider via litellm. Supports 100+ models."""
 
     model: str              # litellm format: provider/model-name
-    api_key: str = ""       # passed directly to completion(), not env var
     api_base: str = ""      # for custom endpoints (optional)
 
     def generate(self, prompt: str, system_prompt: str = "") -> str:
@@ -36,8 +35,6 @@ class LiteLLMProvider(LLMProvider):
         messages.append({"role": "user", "content": prompt})
 
         kwargs: dict = {"model": self.model, "messages": messages}
-        if self.api_key:
-            kwargs["api_key"] = self.api_key
         if self.api_base:
             kwargs["api_base"] = self.api_base
 
@@ -79,9 +76,8 @@ def create_provider(config: dict) -> LiteLLMProvider:
     Expects ``model`` key to be present (settings.DEFAULTS guarantees this).
     """
     model = config["model"]
-    api_key = config.get("api_key", "")
     api_base = config.get("api_base", "")
 
     logger.info("Creating LLM provider: model=%s, api_base=%s",
                 model, api_base or "(default)")
-    return LiteLLMProvider(model=model, api_key=api_key, api_base=api_base)
+    return LiteLLMProvider(model=model, api_base=api_base)

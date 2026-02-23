@@ -22,6 +22,25 @@ Any key below can be set in either config file. Copy this entire block into
 
 ```yaml
 # =============================================================================
+# Provider API Keys
+# =============================================================================
+# Store provider-specific API keys using standard env var names.
+# The agent promotes these to environment variables at startup, and litellm
+# auto-resolves the correct key based on the model prefix.
+#
+# Add only the keys you use. Not needed for local models (Ollama).
+# Common keys:
+#   GEMINI_API_KEY       — Google Gemini
+#   ANTHROPIC_API_KEY    — Anthropic (Claude)
+#   OPENAI_API_KEY       — OpenAI
+# Full list: https://docs.litellm.ai/docs/providers
+
+# GEMINI_API_KEY: ""
+# ANTHROPIC_API_KEY: ""
+# OPENAI_API_KEY: ""
+
+
+# =============================================================================
 # LLM — Creative Stage
 # =============================================================================
 # The main LLM that generates persona, curriculum, and creative content.
@@ -29,19 +48,13 @@ Any key below can be set in either config file. Copy this entire block into
 
 # Model in litellm format: provider/model-name.
 # Examples:
-#   gemini/gemini-2.5-flash          — Google Gemini (default)
-#   gemini/gemini-2.5-pro            — Google Gemini, higher quality
+#   gemini/gemini-3-flash-preview          — Google Gemini (default)
+#   gemini/gemini-2.5-pro                  — Google Gemini, higher quality
 #   ollama_chat/gemma3:27b           — local Ollama, no API key needed
 #   anthropic/claude-sonnet-4-5-20250514  — Anthropic
 #   openai/gpt-4o                    — OpenAI
 # Full list: https://docs.litellm.ai/docs/providers
-model: gemini/gemini-2.5-flash
-
-# API key passed directly to the provider.
-# When empty, litellm falls back to standard env vars
-# (GEMINI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.).
-# Not needed for local models (Ollama).
-api_key: ""
+model: gemini/gemini-3-flash-preview
 
 # Custom API endpoint URL. Only needed for self-hosted or proxy setups.
 # Example: http://my-gateway:8080/v1
@@ -55,15 +68,14 @@ api_base: ""
 # When interview_model is empty, the questionnaire runs in English (0 API calls).
 # A small/local model works well here (~18 short calls per run).
 # Translations are cached — subsequent runs for the same language cost 0 calls.
+#
+# API key: uses the same named keys above (e.g. ANTHROPIC_API_KEY).
+# No separate interview key needed — litellm resolves by model prefix.
 
 # Model for translating interview questions.
 # Leave empty to skip translation and use English.
 # Example: ollama_chat/gemma3:12b
 interview_model: ""
-
-# API key for the interview model.
-# Falls back to api_key above if empty.
-interview_api_key: ""
 
 # API endpoint for the interview model.
 # Falls back to api_base above if empty.
@@ -138,14 +150,22 @@ log_file_name: agent.log
 
 **Minimal** — Gemini cloud, English interview:
 ```yaml
+GEMINI_API_KEY: "AIza..."
 model: gemini/gemini-2.5-flash
-api_key: "AIza..."
 ```
 
-**Cloud + localized interview:**
+**Multi-provider** — different providers for creative and interview stages:
 ```yaml
+GEMINI_API_KEY: "AIza..."
+ANTHROPIC_API_KEY: "sk-ant-..."
 model: gemini/gemini-2.5-flash
-api_key: "AIza..."
+interview_model: anthropic/claude-haiku-4-5-20251001
+```
+
+**Cloud + local interview:**
+```yaml
+GEMINI_API_KEY: "AIza..."
+model: gemini/gemini-2.5-flash
 interview_model: ollama_chat/gemma3:12b
 ```
 
@@ -157,8 +177,8 @@ interview_model: ollama_chat/gemma3:12b
 
 **Corporate environment** — cloud + proxy:
 ```yaml
+GEMINI_API_KEY: "AIza..."
 model: gemini/gemini-2.5-flash
-api_key: "AIza..."
 https_proxy: "http://corporate-proxy:8080"
 interview_model: ollama_chat/gemma3:12b
 ```

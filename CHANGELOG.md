@@ -1,3 +1,30 @@
+v0.44.0 – 2026-02-23
+
+BREAKING CHANGE: Provider-specific named API keys (config-to-env bridge)
+
+Replaces the generic `api_key` / `interview_api_key` config fields with
+provider-specific named keys (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`,
+`OPENAI_API_KEY`, etc.). The agent promotes matching keys from config to
+environment variables at startup, and litellm auto-resolves the correct key
+based on the model prefix. This enables zero-friction provider switching —
+store all your keys once, change only `model:`.
+
+Migration: replace `api_key: "AIza..."` with `GEMINI_API_KEY: "AIza..."` (or
+the appropriate provider key). Remove `interview_api_key:` — the named keys
+handle both stages automatically.
+
+Code changes:
+- Removed: `agent/settings.py` — `api_key` and `interview_api_key` from DEFAULTS
+- Removed: `agent/provider.py` — `api_key` field from LiteLLMProvider dataclass and create_provider()
+- Added: `agent/main.py` — `_inject_api_keys()` config-to-env bridge (regex: `^[A-Z][A-Z0-9_]*_API_KEY$`)
+- Updated: `agent/main.py` — simplified interview_config (no more api_key fallback chain)
+- Updated: `agent/tests/test_provider.py` — replaced api_key tests with env bridge tests
+- Updated: `docs/configuration.md` — provider-specific keys section, updated quick-start examples
+- Updated: `README.md` — quick start config example uses GEMINI_API_KEY
+- Updated: `CLAUDE.md` — architecture description reflects named keys
+
+---
+
 v0.41.0 – 2026-02-14
 
 ARCHITECTURE: Merge generated output into single YAML file (ADR-26005)

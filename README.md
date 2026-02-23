@@ -30,8 +30,8 @@ uv sync
 Create a global config file at `~/.mentor.generator.config.yml`:
 
 ```yaml
+GEMINI_API_KEY: "your-api-key-here"
 model: gemini/gemini-2.5-flash
-api_key: "your-api-key-here"
 ```
 
 For local models, no API key is needed:

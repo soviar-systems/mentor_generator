@@ -27,12 +27,10 @@ logger = logging.getLogger(__name__)
 DEFAULTS: dict = {
     # --- LLM (creative stage) ---
     "model": "gemini/gemini-2.5-flash",     # litellm format: provider/model
-    "api_key": "",                           # direct API key (or leave empty for env vars)
     "api_base": "",                          # custom endpoint URL (optional)
 
     # --- LLM (interview stage) ---
     "interview_model": "",                   # empty = skip LLM interview, use English
-    "interview_api_key": "",                 # separate key for interview provider (optional)
     "interview_api_base": "",                # separate endpoint (optional, e.g. Ollama host)
 
     # --- Network ---

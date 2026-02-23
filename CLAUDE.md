@@ -66,6 +66,7 @@ Three-stage pipeline: **Collect** (0 or N API via interview_model) → **Create*
 - Template has two kinds of `<...>` markers: compile-time (filled by agent) and runtime (filled by mentor AI in `session_record_template`)
 - `RUNTIME_TEMPLATE_KEYS` in template_engine.py is the single source of truth for runtime template skip list
 - Settings are layered: code DEFAULTS → global config → local config (aider-style)
+- Named API keys (`*_API_KEY`) in config are promoted to env vars; litellm resolves per model prefix
 
 ### Core Files (Web Version — Legacy)
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -26,6 +27,21 @@ from agent.yaml_writer import write_mentor_file
 
 logger = logging.getLogger(__name__)
 
+_API_KEY_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_API_KEY$")
+
+
+def _inject_api_keys(cfg: dict) -> None:
+    """Promote named API keys from config to environment variables.
+
+    Scans config for keys matching the pattern (e.g. GEMINI_API_KEY,
+    ANTHROPIC_API_KEY) and sets them as env vars so litellm can
+    resolve them automatically per model prefix.
+    """
+    for key, value in cfg.items():
+        if _API_KEY_PATTERN.match(key) and isinstance(value, str) and value:
+            os.environ[key] = value
+            logger.debug("Injected API key from config: %s", key)
+
 
 def main() -> None:
     args = _parse_args()
@@ -33,6 +49,9 @@ def main() -> None:
     logger.info("Mentor Generator Agent starting")
     logger.info("Settings: model=%s, template=%s",
                 settings["model"], settings["template_path"])
+
+    # --- API keys: promote named keys from config to env vars ---
+    _inject_api_keys(settings)
 
     # --- HTTPS proxy (must be set before any LLM calls) ---
     https_proxy = settings.get("https_proxy", "")
@@ -47,7 +66,6 @@ def main() -> None:
         try:
             interview_config = {
                 "model": settings["interview_model"],
-                "api_key": settings.get("interview_api_key") or settings.get("api_key", ""),
                 "api_base": settings.get("interview_api_base") or settings.get("api_base", ""),
             }
             interview_provider = create_provider(interview_config)
