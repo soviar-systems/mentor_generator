@@ -70,7 +70,7 @@ The problem catalog (v0.41) proved that 6 of 14 identified problems (P1-P5, P14)
 
 - ADR-26005: Embed templates for web chat (superseded for agent)
 - ADR-26007: Format is architecture (JSON for input, YAML for output)
-- Problem catalog: `architecture/research/problem_catalog_v0.41.md`
+- Problem catalog: `docs/architecture/research/problem_catalog_v0.41.md`
 - Agent plan: `misc/plan/plan_20260223_agent_v2_architecture_rethink.md`
 
 ## Participants

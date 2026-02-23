@@ -79,7 +79,7 @@ Rules:
 
 ## References
 
-- Problem catalog that motivated the research/ subdirectory: `architecture/research/problem_catalog_v0.41.md`
+- Problem catalog that motivated the research/ subdirectory: `docs/architecture/research/problem_catalog_v0.41.md`
 - ADR-26006: Postmortem as validated knowledge chain
 - Sibling project precedent: `ai_engineering_book/architecture/`
 

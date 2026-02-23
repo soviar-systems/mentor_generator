@@ -1,10 +1,9 @@
-"""LLM provider abstraction. Gemini implementation first."""
+"""LLM provider abstraction. Universal provider via litellm."""
 
 from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -21,37 +20,37 @@ class LLMProvider(ABC):
 
 
 @dataclass
-class GeminiProvider(LLMProvider):
-    """Google Gemini via google-generativeai SDK."""
+class LiteLLMProvider(LLMProvider):
+    """Universal LLM provider via litellm. Supports 100+ models."""
 
-    model: str = "gemini-3-flash"
-    api_key_env: str = "GEMINI_API_KEY"
+    model: str              # litellm format: provider/model-name
+    api_key: str = ""       # passed directly to completion(), not env var
+    api_base: str = ""      # for custom endpoints (optional)
 
     def generate(self, prompt: str, system_prompt: str = "") -> str:
-        import google.generativeai as genai
+        from litellm import completion
 
-        api_key = os.environ.get(self.api_key_env)
-        if not api_key:
-            logger.error("API key env var %s is not set", self.api_key_env)
-            raise RuntimeError(
-                f"Environment variable {self.api_key_env} is not set. "
-                f"Get a free key at https://aistudio.google.com/apikey"
-            )
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
 
-        logger.info("Calling Gemini model=%s", self.model)
+        kwargs: dict = {"model": self.model, "messages": messages}
+        if self.api_key:
+            kwargs["api_key"] = self.api_key
+        if self.api_base:
+            kwargs["api_base"] = self.api_base
+
+        logger.info("Calling LLM model=%s", self.model)
         logger.debug("Prompt length: %d chars, system prompt: %d chars",
                       len(prompt), len(system_prompt))
 
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(
-            self.model,
-            system_instruction=system_prompt or None,
-        )
-        response = model.generate_content(prompt)
+        response = completion(**kwargs)
+        text = response.choices[0].message.content
 
-        logger.info("Gemini response received: %d chars", len(response.text))
-        logger.debug("Response preview: %.200s...", response.text)
-        return response.text
+        logger.info("LLM response received: %d chars", len(text))
+        logger.debug("Response preview: %.200s...", text)
+        return text
 
 
 def extract_json(text: str) -> dict:
@@ -74,16 +73,15 @@ def extract_json(text: str) -> dict:
     raise ValueError(f"Could not extract JSON from LLM response:\n{text[:500]}")
 
 
-def create_provider(config: dict) -> LLMProvider:
-    """Factory: create provider from config dict."""
-    provider_name = config.get("provider", "gemini")
-    logger.info("Creating LLM provider: %s", provider_name)
-    if provider_name == "gemini":
-        provider = GeminiProvider(
-            model=config.get("model", "gemini-3-flash"),
-            api_key_env=config.get("api_key_env", "GEMINI_API_KEY"),
-        )
-        logger.debug("GeminiProvider: model=%s, api_key_env=%s",
-                      provider.model, provider.api_key_env)
-        return provider
-    raise ValueError(f"Unknown provider: {provider_name}")
+def create_provider(config: dict) -> LiteLLMProvider:
+    """Factory: create provider from config dict.
+
+    Expects ``model`` key to be present (settings.DEFAULTS guarantees this).
+    """
+    model = config["model"]
+    api_key = config.get("api_key", "")
+    api_base = config.get("api_base", "")
+
+    logger.info("Creating LLM provider: model=%s, api_base=%s",
+                model, api_base or "(default)")
+    return LiteLLMProvider(model=model, api_key=api_key, api_base=api_base)

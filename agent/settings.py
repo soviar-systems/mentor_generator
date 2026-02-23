@@ -11,7 +11,7 @@ define its own magic constants — import from settings instead.
 
 Usage:
     from agent.settings import settings
-    settings["model"]           # "gemini-3-flash" (or override)
+    settings["model"]           # "gemini/gemini-2.5-flash" (or override)
     settings["artifacts_dir"]   # ".mentor.generator.artifacts"
 """
 
@@ -25,10 +25,18 @@ import yaml
 logger = logging.getLogger(__name__)
 
 DEFAULTS: dict = {
-    # --- LLM Provider ---
-    "provider": "gemini",
-    "model": "gemini-3-flash",
-    "api_key_env": "GEMINI_API_KEY",
+    # --- LLM (creative stage) ---
+    "model": "gemini/gemini-2.5-flash",     # litellm format: provider/model
+    "api_key": "",                           # direct API key (or leave empty for env vars)
+    "api_base": "",                          # custom endpoint URL (optional)
+
+    # --- LLM (interview stage) ---
+    "interview_model": "",                   # empty = skip LLM interview, use English
+    "interview_api_key": "",                 # separate key for interview provider (optional)
+    "interview_api_base": "",                # separate endpoint (optional, e.g. Ollama host)
+
+    # --- Network ---
+    "https_proxy": "",                       # HTTPS proxy for cloud models
 
     # --- Paths ---
     "template_path": "./agent/templates/mentor_system_prompt.template.json",

@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 import time
 from pathlib import Path
 
 from agent import artifacts
-from agent.collector import collect_interactive
+from agent.collector import collect_interactive, interview_source_hash
 from agent.creative_engine import generate_creative, parse_creative_response
 from agent.provider import create_provider
 from agent.settings import settings, setup_logging
@@ -30,8 +31,35 @@ def main() -> None:
     args = _parse_args()
     setup_logging(settings["log_level"])
     logger.info("Mentor Generator Agent starting")
-    logger.info("Settings: provider=%s, model=%s, template=%s",
-                settings["provider"], settings["model"], settings["template_path"])
+    logger.info("Settings: model=%s, template=%s",
+                settings["model"], settings["template_path"])
+
+    # --- HTTPS proxy (must be set before any LLM calls) ---
+    https_proxy = settings.get("https_proxy", "")
+    if https_proxy:
+        os.environ["HTTPS_PROXY"] = https_proxy
+        logger.info("HTTPS proxy set: %s", https_proxy)
+
+    # --- Interview provider (optional, for localized questionnaire) ---
+    interview_provider = None
+    interview_cache = None
+    if not args.skip_collect and settings.get("interview_model"):
+        try:
+            interview_config = {
+                "model": settings["interview_model"],
+                "api_key": settings.get("interview_api_key") or settings.get("api_key", ""),
+                "api_base": settings.get("interview_api_base") or settings.get("api_base", ""),
+            }
+            interview_provider = create_provider(interview_config)
+            logger.info("Interview provider ready: %s", settings["interview_model"])
+
+            from agent.interviewer import InterviewCache
+            cache_path = Path(settings["artifacts_dir"]) / "interview_cache.json"
+            interview_cache = InterviewCache(cache_path, interview_source_hash())
+        except Exception as e:
+            logger.warning("Interview LLM unavailable (%s), using English", e)
+            interview_provider = None
+            interview_cache = None
 
     # --- Stage 1: Collect ---
     if args.skip_collect:
@@ -40,7 +68,9 @@ def main() -> None:
         logger.info("Loaded answers: topic=%s, strategy=%s", answers.topic, answers.strategy)
     else:
         logger.info("Stage 1: Collecting user answers")
-        answers = collect_interactive()
+        answers = collect_interactive(interview_provider, interview_cache)
+        if interview_cache:
+            interview_cache.save()
         path = artifacts.save_answers(answers)
         logger.info("Answers saved to %s", path)
 
@@ -102,6 +132,8 @@ def _call_with_retries(provider, answers) -> str:
                 print(f"\nAPI call failed after {max_retries + 1} attempts: {e}")
                 print("Your answers are saved. Re-run with --skip-collect to retry.")
                 sys.exit(1)
+    # Unreachable: loop always returns or calls sys.exit
+    raise RuntimeError("Unreachable")
 
 
 def _print_usage_guide() -> None:

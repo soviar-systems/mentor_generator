@@ -1,7 +1,16 @@
-"""CLI data collection — 0 API calls. Reads questions from mentor_generator.json."""
+"""CLI data collection — 0 API calls without interview LLM, N calls with.
+
+When interview_provider is configured, all localizable texts are
+pre-translated before the questionnaire starts (or served from cache).
+The interview loop then runs identically to the English-only version,
+just with translated strings. User answers are stored as-is — the
+creative LLM handles any language via the dialogue_language field.
+"""
 
 from __future__ import annotations
 
+import hashlib
+import locale
 import logging
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -28,11 +37,13 @@ class UserAnswers:
     persona: str = ""                # Q9
 
 
-# Questions for all fields except strategy (handled separately)
+# ---------------------------------------------------------------------------
+# Localizable text constants
+# ---------------------------------------------------------------------------
+
+_GREETING_TEXT = "What language would you prefer to communicate in?"
+
 _QUESTIONS: list[tuple[str, str]] = [
-    ("dialogue_language",
-     "Здравствуйте! Какой язык вам удобнее для дальнейшего взаимодействия?\n"
-     "Hello! What language would you prefer to communicate in?"),
     ("mentor_language",
      "Which language should the learning mentor use when teaching you?"),
     ("topic",
@@ -52,6 +63,18 @@ _QUESTIONS: list[tuple[str, str]] = [
      "(e.g., 'focus on landscape techniques' or 'skip the introductory math')"),
 ]
 
+_STRATEGY_MENU_TEXT = (
+    "Which learning strategy is your priority?\n"
+    "\n"
+    "  [1] DEPTH-FIRST (Mastery-Gated)\n"
+    "      Progression based solely on verified mastery.\n"
+    "      No deadlines — understanding comes first.\n"
+    "\n"
+    "  [2] TIME-BOXED (Speed-First)\n"
+    "      Course must finish by a specific deadline.\n"
+    "      Content depth may be reduced to meet the timeline."
+)
+
 _QUESTIONS_AFTER_STRATEGY: list[tuple[str, str]] = [
     ("mastery_method",
      "How should the mentor verify your progress and mastery?\n"
@@ -61,27 +84,112 @@ _QUESTIONS_AFTER_STRATEGY: list[tuple[str, str]] = [
      "(e.g., 'a supportive coach', 'a strict professor', 'Pyotr Tchaikovsky', 'a friendly peer')"),
 ]
 
+# --- Locale detection ---
 
-def collect_interactive() -> UserAnswers:
-    """Run the 9-question CLI questionnaire. Returns UserAnswers."""
+_LOCALE_MAP: dict[str, str] = {
+    "en": "English",  "ru": "Russian",   "de": "German",
+    "fr": "French",   "es": "Spanish",   "it": "Italian",
+    "pt": "Portuguese", "zh": "Chinese", "ja": "Japanese",
+    "ko": "Korean",  "ar": "Arabic",    "hi": "Hindi",
+    "tr": "Turkish", "pl": "Polish",    "nl": "Dutch",
+    "sv": "Swedish", "uk": "Ukrainian", "cs": "Czech",
+}
+
+
+def _detect_locale_language() -> str:
+    """Detect system language from locale setting."""
+    try:
+        loc = locale.getlocale()[0] or ""
+    except ValueError:
+        return "English"
+    prefix = loc[:2].lower() if len(loc) >= 2 else ""
+    return _LOCALE_MAP.get(prefix, "English")
+
+
+# ---------------------------------------------------------------------------
+# Source hash for cache invalidation
+# ---------------------------------------------------------------------------
+
+def _all_localizable_texts() -> list[str]:
+    """All texts that need translation, including formatted prompts."""
+    recommended = settings["recommended_session_minutes"]
+    texts = [_GREETING_TEXT]
+    texts.extend(text for _, text in _QUESTIONS)
+    texts.append(_STRATEGY_MENU_TEXT)
+    texts.append("Enter 1 or 2: ")
+    texts.append("Please enter 1 or 2.")
+    texts.append(
+        f"Recommended session length: {recommended} minutes.\n"
+        f"  This gives enough time for explanation, practice, and mastery checks\n"
+        f"  without fatigue."
+    )
+    texts.append(
+        f"Press Enter to accept {recommended} min, "
+        f"or type your preferred session length in minutes: "
+    )
+    texts.append("Enter your deadline date.")
+    texts.append("Invalid date format. Use YYYY-MM-DD (e.g., 2026-06-01).")
+    texts.append("Deadline must be in the future.")
+    texts.extend(text for _, text in _QUESTIONS_AFTER_STRATEGY)
+    return texts
+
+
+def interview_source_hash() -> str:
+    """Hash all localizable interview texts for cache invalidation."""
+    texts = _all_localizable_texts()
+    return hashlib.sha256("\n".join(texts).encode()).hexdigest()[:16]
+
+
+# ---------------------------------------------------------------------------
+# Questionnaire
+# ---------------------------------------------------------------------------
+
+def collect_interactive(interview_provider=None, interview_cache=None) -> UserAnswers:
+    """Run the 9-question CLI questionnaire. Returns UserAnswers.
+
+    Args:
+        interview_provider: optional LLM provider for translating questions.
+            When set, questions are shown in the user's language. Answers are
+            stored as-is (the creative LLM handles any language).
+        interview_cache: optional InterviewCache for reusing translations.
+    """
     answers = UserAnswers()
     logger.info("Starting interactive questionnaire")
     print("\n=== Mentor Generator ===\n")
 
-    # Questions 0-6 (greeting + Q1-Q6)
-    for i, (field_name, prompt_text) in enumerate(_QUESTIONS):
-        label = f"[{i}] " if i == 0 else f"[Q{i}] "
-        print(f"\n{label}{prompt_text}")
+    detected_lang = _detect_locale_language()
+    logger.info("Detected system locale language: %s", detected_lang)
+
+    # Q0: Language preference — shown in detected locale language
+    greeting = _GREETING_TEXT
+    if interview_provider and detected_lang != "English":
+        from agent.interviewer import translate_interview
+        q0_translations = translate_interview(
+            interview_provider, detected_lang, [_GREETING_TEXT], interview_cache,
+        )
+        greeting = q0_translations.get(_GREETING_TEXT, _GREETING_TEXT)
+
+    print(f"\n[0] {greeting}")
+    raw = input("> ").strip()
+    answers.dialogue_language = raw if raw else detected_lang
+    logger.debug("Q0 (dialogue_language): %s", answers.dialogue_language)
+
+    # Pre-translate remaining texts to user's chosen language
+    t = _build_translator(interview_provider, answers.dialogue_language, interview_cache)
+
+    # Q1-Q6
+    for i, (field_name, prompt_text) in enumerate(_QUESTIONS, start=1):
+        print(f"\n[Q{i}] {t(prompt_text)}")
         raw = input("> ").strip()
         setattr(answers, field_name, raw)
         logger.debug("Q%d (%s): %s", i, field_name, raw)
 
     # Q7: Strategy — deterministic choice
-    _collect_strategy(answers)
+    _collect_strategy(answers, t)
 
     # Q8-Q9
     for j, (field_name, prompt_text) in enumerate(_QUESTIONS_AFTER_STRATEGY, start=8):
-        print(f"\n[Q{j}] {prompt_text}")
+        print(f"\n[Q{j}] {t(prompt_text)}")
         raw = input("> ").strip()
         setattr(answers, field_name, raw)
         logger.debug("Q%d (%s): %s", j, field_name, raw)
@@ -91,40 +199,60 @@ def collect_interactive() -> UserAnswers:
     return answers
 
 
-def _collect_strategy(answers: UserAnswers) -> None:
+def _build_translator(interview_provider, language, interview_cache):
+    """Pre-translate all texts and return a lookup function.
+
+    Returns a callable t(text) -> translated_text. If no provider is
+    configured or language is English, returns identity (no-op).
+    """
+    if not interview_provider or language.lower() == "english":
+        return lambda text: text
+
+    from agent.interviewer import translate_interview
+
+    all_texts = _all_localizable_texts()
+    translations = translate_interview(
+        interview_provider, language, all_texts, interview_cache,
+    )
+    logger.info("Pre-translated %d texts to %s", len(translations), language)
+
+    return lambda text: translations.get(text, text)
+
+
+# ---------------------------------------------------------------------------
+# Q7: Strategy
+# ---------------------------------------------------------------------------
+
+def _collect_strategy(answers: UserAnswers, t) -> None:
     """Q7: Deterministic strategy selection with follow-up."""
     recommended = settings["recommended_session_minutes"]
 
-    print(
-        "\n[Q7] Which learning strategy is your priority?\n"
-        "\n"
-        "  [1] DEPTH-FIRST (Mastery-Gated)\n"
-        "      Progression based solely on verified mastery.\n"
-        "      No deadlines — understanding comes first.\n"
-        "\n"
-        "  [2] TIME-BOXED (Speed-First)\n"
-        "      Course must finish by a specific deadline.\n"
-        "      Content depth may be reduced to meet the timeline.\n"
-    )
+    print(f"\n[Q7] {t(_STRATEGY_MENU_TEXT)}\n")
 
+    enter_prompt = t("Enter 1 or 2: ")
+    retry_msg = "  " + t("Please enter 1 or 2.")
     while True:
-        choice = input("Enter 1 or 2: ").strip()
+        choice = input(enter_prompt).strip()
         if choice in ("1", "2"):
             break
-        print("  Please enter 1 or 2.")
+        print(retry_msg)
 
     if choice == "1":
         answers.strategy = "DEPTH-FIRST"
         logger.debug("Strategy: %s", answers.strategy)
-        print(
-            f"\n  Recommended session length: {recommended} minutes.\n"
+
+        session_info = (
+            f"Recommended session length: {recommended} minutes.\n"
             f"  This gives enough time for explanation, practice, and mastery checks\n"
             f"  without fatigue."
         )
-        custom = input(
-            f"  Press Enter to accept {recommended} min, "
+        print(f"\n  {t(session_info)}")
+
+        accept_prompt = (
+            f"Press Enter to accept {recommended} min, "
             f"or type your preferred session length in minutes: "
-        ).strip()
+        )
+        custom = input(f"  {t(accept_prompt)}").strip()
 
         if custom:
             minutes = _parse_minutes(custom, recommended)
@@ -136,17 +264,18 @@ def _collect_strategy(answers: UserAnswers) -> None:
     else:
         answers.strategy = "TIME-BOXED"
         logger.debug("Strategy: %s", answers.strategy)
-        print("\n  Enter your deadline date.")
+
+        print(f"\n  {t('Enter your deadline date.')}")
         while True:
             raw_date = input("  Deadline (YYYY-MM-DD): ").strip()
             deadline = _parse_date(raw_date)
             if deadline is None:
                 logger.debug("Invalid date input: %s", raw_date)
-                print("  Invalid date format. Use YYYY-MM-DD (e.g., 2026-06-01).")
+                print(f"  {t('Invalid date format. Use YYYY-MM-DD (e.g., 2026-06-01).')}")
                 continue
             if deadline <= date.today():
                 logger.debug("Deadline in the past: %s", raw_date)
-                print("  Deadline must be in the future.")
+                print(f"  {t('Deadline must be in the future.')}")
                 continue
             break
 
@@ -157,7 +286,7 @@ def _collect_strategy(answers: UserAnswers) -> None:
             f"{days_left} days ({weeks_left:.1f} weeks) remaining"
         )
         logger.info("TIME-BOXED: %s", answers.time_input)
-        print(f"\n  {days_left} days ({weeks_left:.1f} weeks) until deadline.")
+        print(f"\n  {days_left} days ({weeks_left:.1f} weeks)")
 
 
 def _parse_minutes(raw: str, default: int) -> int:

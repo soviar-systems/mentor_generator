@@ -15,7 +15,7 @@ The primary way to use Mentor Generator is the Python CLI agent.
 
 - Python 3.10–3.13
 - [uv](https://docs.astral.sh/uv/) package manager
-- A Gemini API key ([get one here](https://aistudio.google.com/apikey))
+- An LLM API key (Gemini, Anthropic, OpenAI, etc.) — or a local model via [Ollama](https://ollama.com/)
 
 ### Installation
 
@@ -27,24 +27,25 @@ uv sync
 
 ### Configuration
 
-Set your API key as an environment variable:
-
-```bash
-export GEMINI_API_KEY="your-api-key-here"
-```
-
-Or create a global config file at `~/.mentor.generator.config.yml`:
+Create a global config file at `~/.mentor.generator.config.yml`:
 
 ```yaml
-api_key_env: GEMINI_API_KEY
+model: gemini/gemini-2.5-flash
+api_key: "your-api-key-here"
 ```
 
-You can also create a local config `.mentor.generator.config.yml` in the project root to override settings per project.
+For local models, no API key is needed:
+
+```yaml
+model: ollama_chat/gemma3:27b
+```
+
+See [docs/configuration.md](docs/configuration.md) for the full list of settings.
 
 ### Generate a Mentor
 
 ```bash
-uv run python -m agent.main
+uv run python -m agent
 ```
 
 The agent walks you through 9 questions:
@@ -74,13 +75,13 @@ output/
 
 ```bash
 # Full pipeline (questionnaire → API call → compile)
-uv run python -m agent.main
+uv run python -m agent
 
 # Skip questionnaire, reuse saved answers (re-call API)
-uv run python -m agent.main --skip-collect
+uv run python -m agent --skip-collect
 
 # Skip questionnaire + API, recompile from saved artifacts only
-uv run python -m agent.main --skip-collect --skip-api
+uv run python -m agent --skip-collect --skip-api
 ```
 
 Answers and API responses are cached in `.mentor.generator.artifacts/` so you can iterate on the compile step without re-answering questions or spending API calls.
@@ -90,12 +91,12 @@ Answers and API responses are cached in `.mentor.generator.artifacts/` so you ca
 The agent runs a three-stage pipeline:
 
 ```
-Collect (0 API calls)  →  Create (1 API call)  →  Compile (0 API calls)
-       CLI questionnaire       LLM generates           Template filling,
-       gathers 9 answers       creative content         validation, YAML output
+Collect               →  Create (1 API call)  →  Compile (0 API calls)
+CLI questionnaire            LLM generates           Template filling,
+gathers 9 answers            creative content         validation, YAML output
 ```
 
-1. **Collect** — CLI questionnaire gathers your answers (no API calls)
+1. **Collect** — CLI questionnaire gathers your answers. When `interview_model` is configured, questions are shown in your language (otherwise English, 0 API calls)
 2. **Create** — One LLM call generates creative content (persona, expertise, curriculum phases). The LLM returns labeled text blocks, not structured data
 3. **Compile** — Deterministic code parses the response, injects it into the template, validates structure, and writes YAML
 
@@ -123,7 +124,8 @@ If you prefer not to install anything, you can use the original web-chat workflo
 mentor_generator/
 ├── agent/                        # Python CLI (primary product)
 │   ├── main.py                   # Pipeline orchestrator
-│   ├── collector.py              # CLI questionnaire (0 API calls)
+│   ├── collector.py              # CLI questionnaire
+│   ├── interviewer.py            # Interview translation + cache
 │   ├── creative_engine.py        # Single LLM call + parser
 │   ├── template_engine.py        # Deterministic template filling
 │   ├── validator.py              # Structural validation
@@ -135,7 +137,8 @@ mentor_generator/
 │   └── tests/                    # Golden-file tests (0 API calls)
 ├── web_version/                  # Legacy web-chat workflow
 │   └── mentor_generator.json     # Original meta-prompt
-├── architecture/                 # ADRs, postmortems, research
+├── docs/                         # Configuration reference, architecture
+│   └── architecture/             # ADRs, postmortems, research
 ├── pyproject.toml
 └── CLAUDE.md
 ```

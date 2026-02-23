@@ -16,8 +16,9 @@ The project has two workflows: **agent/** (Python CLI, the primary product) and 
 mentor_generator/
 ├── agent/                                 # THE PRODUCT — self-contained Python CLI
 │   ├── settings.py                        # Layered config (global → local → defaults)
-│   ├── provider.py                        # LLM provider abstraction (Gemini)
-│   ├── collector.py                       # CLI questionnaire (0 API calls)
+│   ├── provider.py                        # LLM provider abstraction (litellm, any provider)
+│   ├── collector.py                       # CLI questionnaire (0 API calls, or N with interview LLM)
+│   ├── interviewer.py                     # Interview translation + cache
 │   ├── creative_engine.py                 # Single LLM call + labeled text parser
 │   ├── template_engine.py                 # Deterministic placeholder injection
 │   ├── validator.py                       # Structural validation
@@ -33,10 +34,12 @@ mentor_generator/
 │       └── fixtures/
 ├── web_version/                           # Legacy web-chat workflow
 │   └── mentor_generator.json              # Original meta-prompt
-├── architecture/
-│   ├── adr/                               # Architecture Decision Records
-│   ├── postmortem/                         # Version retrospectives (historical records)
-│   └── research/                           # Cross-cutting analysis and synthesis
+├── docs/
+│   ├── architecture/
+│   │   ├── adr/                           # Architecture Decision Records
+│   │   ├── postmortem/                     # Version retrospectives (historical records)
+│   │   └── research/                       # Cross-cutting analysis and synthesis
+│   └── configuration.md                   # Full config reference (all settings)
 ├── misc/
 │   └── plan/                              # Implementation plans (saved for history)
 │       └── implemented/                   # Plans moved here after completion
@@ -57,7 +60,7 @@ user_course/
 
 ### Agent Architecture
 
-Three-stage pipeline: **Collect** (0 API) → **Create** (1 API) → **Compile** (0 API).
+Three-stage pipeline: **Collect** (0 or N API via interview_model) → **Create** (1 API via model) → **Compile** (0 API).
 
 - LLM returns labeled text blocks (PERSONA_NAME:, EXPERTISE:, etc.), code builds JSON structure
 - Template has two kinds of `<...>` markers: compile-time (filled by agent) and runtime (filled by mentor AI in `session_record_template`)
@@ -95,7 +98,7 @@ The template (`agent/templates/mentor_system_prompt.template.json`) produces:
 
 ### Architectural Principles (from ADRs)
 
-These principles are derived from accepted ADRs in architecture/adr/. When a new ADR is accepted, update this section to reflect its key decisions.
+These principles are derived from accepted ADRs in docs/architecture/adr/. When a new ADR is accepted, update this section to reflect its key decisions.
 
 **ADR-26001: Single-file course_history** — All session records live in one append-only course_history file. Users attach 1-2 files per session, not N. Never modify existing records, only append.
 
@@ -109,7 +112,7 @@ These principles are derived from accepted ADRs in architecture/adr/. When a new
 
 **ADR-26007: Format is architecture** — Format affects LLM behavior: structural noise tokens consume attention budget, and training-data distribution biases processing mode (JSON → data parsing, YAML → instruction following). Meta-prompt stays JSON (compiler input, needs validation). Generated output is YAML (runtime instructions, lowest noise with key-value addressability). Session records are JSON (structured data for field scanning).
 
-**ADR-26008: Architecture directory taxonomy** — All architectural documentation lives in architecture/ (not generic docs/), organized into three subdirectories by document type: adr/ (decisions), postmortem/ (version retrospectives), research/ (cross-cutting analysis). Each has its own naming convention and lifecycle. No files at the architecture/ root.
+**ADR-26008: Architecture directory taxonomy** — All architectural documentation lives in docs/architecture/, organized into three subdirectories by document type: adr/ (decisions), postmortem/ (version retrospectives), research/ (cross-cutting analysis). Each has its own naming convention and lifecycle. No files at the architecture/ root. User-facing docs (configuration reference, guides) live in docs/ alongside architecture/.
 
 **ADR-26009: Agent architecture — template extraction** — Template extracted from mentor_generator.json to standalone `agent/templates/mentor_system_prompt.template.json`. The agent/ package is self-contained. Web-chat workflow preserved in `web_version/`. Supersedes ADR-26005 for the agent workflow (ADR-26005 remains valid for web_version/).
 
@@ -128,7 +131,7 @@ Additional patterns:
 - Run tests: `uv run pytest agent/tests/ -v` (0 API calls, offline)
 - Run full pipeline: `uv run python -m agent.main`
 - Recompile only: `uv run python -m agent.main --skip-collect --skip-api`
-- Config: `~/.mentor.generator.config.yml` (global/secrets) → `.mentor.generator.config.yml` (local overrides)
+- Config: `~/.mentor.generator.config.yml` (global/secrets) → `.mentor.generator.config.yml` (local overrides). See `docs/configuration.md`.
 - Artifacts: `.mentor.generator.artifacts/` (gitignored, reusable across runs)
 
 ## JSON/Template Conventions
@@ -147,10 +150,10 @@ Other conventions:
 
 ### Creating a Mentor (Agent — Primary)
 
-1. Configure API key: set `GEMINI_API_KEY` env var (or set `api_key_env` in global config)
+1. Configure `~/.mentor.generator.config.yml` (see `docs/configuration.md` for all settings)
 2. Run `uv run python -m agent.main`
-3. Answer 9 CLI questions
-4. Agent calls Gemini once, fills template, validates, outputs YAML
+3. Answer 9 CLI questions (localized if `interview_model` is set)
+4. Agent calls LLM once, fills template, validates, outputs YAML
 5. Output: `output/mentor_system_prompt.yml` + empty `output/course_history`
 
 ### Creating a Mentor (Web Chat — Legacy)
@@ -199,7 +202,7 @@ feat: add greeting placeholders to session protocols (v0.40.0)
 - Added: templates/mentor_system_prompt.template.md — greeting_text placeholder in welcome_message for persona injection
 - Fixed: templates/session.template.md — _template_notes still described per-file sessions from before v0.35.0
 - Updated: mentor_generator.json — persona_mapping_protocol rules to reference new placeholder fields
-- Created: architecture/adr/adr_26003_instruction_budget_llm_context_limits.md — instruction budget principle
+- Created: docs/architecture/adr/adr_26003_instruction_budget_llm_context_limits.md — instruction budget principle
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
