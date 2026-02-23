@@ -67,6 +67,7 @@ Three-stage pipeline: **Collect** (0 or N API via interview_model) → **Create*
 - `RUNTIME_TEMPLATE_KEYS` in template_engine.py is the single source of truth for runtime template skip list
 - Settings are layered: code DEFAULTS → global config → local config (aider-style)
 - Named API keys (`*_API_KEY`) in config are promoted to env vars; litellm resolves per model prefix
+- Config-to-env bridge (`_inject_api_keys` in main.py): keys matching `^[A-Z][A-Z0-9_]*_API_KEY$` → `os.environ`
 
 ### Core Files (Web Version — Legacy)
 
@@ -130,6 +131,7 @@ Additional patterns:
 - Package manager: `uv` (not pip). Run `uv sync --dev` to install.
 - Python: pinned to 3.13 in `.python-version` (3.14 freethreaded lacks prebuilt grpcio wheels)
 - Run tests: `uv run pytest agent/tests/ -v` (0 API calls, offline)
+- Run tests with coverage: `uv run pytest agent/tests/ -v --cov=agent --cov-report=term-missing`
 - Run full pipeline: `uv run python -m agent.main`
 - Recompile only: `uv run python -m agent.main --skip-collect --skip-api`
 - Config: `~/.mentor.generator.config.yml` (global/secrets) → `.mentor.generator.config.yml` (local overrides). See `docs/configuration.md`.
@@ -207,6 +209,11 @@ feat: add greeting placeholders to session protocols (v0.40.0)
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
+
+### Testing Conventions
+- Use `DEFAULTS["key"]` instead of hardcoding config values (e.g. model names) in tests
+- Use `monkeypatch` sentinel values to test env var side effects — never assert `os.environ.get(key) is None` (machine env leaks)
+- All tests must be offline (0 API calls) — use fixtures and mocks for LLM paths
 
 ## When Editing
 
