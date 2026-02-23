@@ -13,17 +13,99 @@ Migration: replace `api_key: "AIza..."` with `GEMINI_API_KEY: "AIza..."` (or
 the appropriate provider key). Remove `interview_api_key:` — the named keys
 handle both stages automatically.
 
-Code changes:
-- Removed: `agent/settings.py` — `api_key` and `interview_api_key` from DEFAULTS
-- Removed: `agent/provider.py` — `api_key` field from LiteLLMProvider dataclass and create_provider()
-- Added: `agent/main.py` — `_inject_api_keys()` config-to-env bridge (regex: `^[A-Z][A-Z0-9_]*_API_KEY$`)
-- Updated: `agent/main.py` — simplified interview_config (no more api_key fallback chain)
-- Updated: `agent/tests/test_provider.py` — replaced api_key tests with env bridge tests
-- Updated: `docs/configuration.md` — provider-specific keys section, updated quick-start examples
-- Updated: `README.md` — quick start config example uses GEMINI_API_KEY
-- Updated: `CLAUDE.md` — architecture description reflects named keys
+* New Features:
+    - Provider-specific named API keys, config-to-env bridge (v0.44.0)
+        - Updated: `agent/settings.py` — removed `api_key` and `interview_api_key` from DEFAULTS
+        - Updated: `agent/provider.py` — removed `api_key` field from LiteLLMProvider dataclass and create_provider()
+        - Updated: `agent/main.py` — added `_inject_api_keys()` config-to-env bridge, simplified interview_config
+        - Updated: `agent/tests/test_provider.py` — replaced api_key tests with env bridge tests (sentinel-based)
+        - Updated: `docs/configuration.md` — provider-specific keys section, updated quick-start examples
+        - Updated: `README.md` — quick start config example uses GEMINI_API_KEY
+        - Updated: `CLAUDE.md` — architecture description reflects named keys
+        - Updated: `CHANGELOG.md` — v0.44.0 breaking change entry
+        - Created: `misc/plan/implemented/plan_20260223_provider_specific_named_api_keys.md` — implementation plan
+        - Configured: `pyproject.toml` — added pytest-cov dev dependency
+* Documentation:
+    - Add testing conventions and coverage command to CLAUDE.md
+        - Updated: `CLAUDE.md` — config-to-env bridge detail, coverage command, testing conventions (sentinel pattern, no hardcoded config values, offline-only tests)
 
----
+release v0.43.0 - 2026-02-23
+* New Features:
+    - Litellm provider, LLM interview, docs restructure (v0.43.0)
+        - Updated: `agent/provider.py` — GeminiProvider → LiteLLMProvider via litellm, narrowed create_provider() return type
+        - Updated: `agent/settings.py` — new DEFAULTS: model, api_key, api_base, interview_model, interview_api_key, interview_api_base, https_proxy; removed provider/api_key_env
+        - Updated: `agent/collector.py` — accepts optional interview_provider + interview_cache, pre-translates all questions, locale detection
+        - Created: `agent/interviewer.py` — InterviewCache + translate_interview() with persistent cache and graceful fallback
+        - Updated: `agent/main.py` — interview provider creation, HTTPS proxy setup, removed stale settings["provider"]
+        - Created: `agent/tests/test_provider.py` — 4 factory tests using DEFAULTS as source of truth
+        - Created: `agent/tests/test_interviewer.py` — 5 tests with MockProvider (plumbing, cache, fallback, roundtrip)
+        - Updated: `pyproject.toml` — google-generativeai → litellm, version 0.43.0
+        - Updated: `uv.lock` — regenerated for litellm dependency
+        - Moved: `architecture/` → `docs/architecture/` — docs/ now hosts both architecture and user-facing references
+        - Created: `docs/configuration.md` — full Scrapy-style config reference with all settings and examples
+        - Updated: `CLAUDE.md` — file tree, provider description, pipeline stages, path references, usage workflow
+        - Updated: `README.md` — file tree for docs/architecture/
+        - Updated: `docs/architecture/adr/adr_26005_embed_templates_for_web_chat.md` — cross-reference paths
+        - Updated: `docs/architecture/adr/adr_26006_postmortem_as_validated_knowledge_chain.md` — cross-reference paths
+        - Updated: `docs/architecture/adr/adr_26008_architecture_directory_taxonomy.md` — cross-reference paths
+        - Updated: `docs/architecture/adr/adr_26009_agent_architecture_template_extraction.md` — cross-reference paths
+        - Moved: `misc/plan/plan_20260223_litellm_provider_llm_interview_proxy.md` → `misc/plan/implemented/`
+
+release v0.42.0 - 2026-02-23
+* New Features:
+    - Implement agentic mentor generator pipeline (v0.42.0)
+        - Created: `agent/__init__.py` — package marker
+        - Created: `agent/__main__.py` — allows `python -m agent`
+        - Created: `agent/settings.py` — layered config (global → local → defaults) with dual logging
+        - Created: `agent/provider.py` — LLM provider abstraction with GeminiProvider
+        - Created: `agent/collector.py` — CLI questionnaire (0 API calls), deterministic strategy selection
+        - Created: `agent/creative_engine.py` — single LLM call, labeled text block parser
+        - Created: `agent/artifacts.py` — save/load pipeline artifacts to .mentor.generator.artifacts/
+        - Created: `agent/template_engine.py` — deterministic placeholder injection with deep copy
+        - Created: `agent/validator.py` — structural validation (15 keys, no placeholders, guidance preserved)
+        - Created: `agent/yaml_writer.py` — YAML output with course_history creation
+        - Created: `agent/main.py` — pipeline orchestrator with --skip-collect and --skip-api flags
+        - Created: `agent/templates/mentor_system_prompt.template.json` — extracted template from mentor_generator.json
+        - Created: `agent/USAGE.md` — post-generation user guide
+        - Created: `agent/tests/test_pipeline.py` — 5 golden-file integration tests (0 API calls)
+        - Created: `agent/tests/fixtures/mock_answers.yml` — mock user answers
+        - Created: `agent/tests/fixtures/mock_creative_response.txt` — mock LLM output
+        - Created: `agent/tests/README.md` — developer guide for tests
+        - Created: `architecture/adr/adr_26009_agent_architecture_template_extraction.md` — ADR superseding 26005
+        - Moved: `misc/plan/implemented/plan_20260218_mentor_generator_agent_v1.md` — old plan archived
+        - Created: `misc/plan/plan_20260223_agent_v2_architecture_rethink.md` — current plan
+        - Renamed: `mentor_generator.json` → `web_version/mentor_generator.json` — legacy web-chat workflow
+        - Created: `pyproject.toml` — uv project config with pyyaml + google-generativeai deps
+        - Created: `uv.lock` — dependency lockfile
+        - Created: `.python-version` — pin Python 3.13 (avoids grpcio source compilation on 3.14)
+        - Updated: `.gitignore` — added .mentor.generator.artifacts/, output/, .venv/, __pycache__/
+* Documentation:
+    - Update CLAUDE.md with JSON/Template Conventions and Critical Conventions
+        - Updated: CLAUDE.md — Added JSON/Template Conventions section detailing field taxonomy (literal values, placeholders, _-prefixed
+        - Updated: CLAUDE.md — Added Critical Conventions section with Planning and Commit Conventions details.
+        - Moved: CLAUDE.md — Reorganized sections to place Critical Conventions after Usage Workflow.
+    - Rewrite README for agent architecture (v0.42.0)
+        - Updated: `README.md` — replaced outdated 3-file web-chat workflow with agent CLI quick start, installation, configuration, CLI options, pipeline explanation, and project structure; learning sessions section now references agent/USAGE.md instead of duplicating content; web-chat workflow preserved as legacy section
+    - Update CLAUDE.md for agent architecture (v0.42.0)
+        - Updated: `CLAUDE.md` — file structure, agent architecture, development commands, ADR-26009, dual usage workflows
+    - Rename docs/ to architecture/, add ADR-26008
+        - Renamed: `docs/` → `architecture/` — all architectural documentation under a purpose-named directory (ADR-26008)
+        - Created: `architecture/adr/adr_26008_architecture_directory_taxonomy.md` — formalizes three-category taxonomy: adr/, postmortem/, research/
+        - Updated: `CLAUDE.md` — file structure tree, ADR path references, and ADR-26008 summary in Architectural Principles
+        - Updated: `architecture/adr/adr_26005_embed_templates_for_web_chat.md` — postmortem path references to new location
+        - Updated: `architecture/adr/adr_26006_postmortem_as_validated_knowledge_chain.md` — file convention path and all postmortem references to new location
+    - Reorganize docs/ and add problem catalog research
+        - Updated: `CLAUDE.md` — file structure to reflect new docs/postmortem/ and docs/research/ subdirectories
+        - Moved: `docs/ARCHITECTURE_POSTMORTEM_v0.30.md` — to docs/postmortem/ for cleaner document taxonomy
+        - Moved: `docs/ARCHITECTURE_POSTMORTEM_v0.32.md` — to docs/postmortem/
+        - Moved: `docs/ARCHITECTURE_POSTMORTEM_v0.40.md` — to docs/postmortem/
+        - Created: `docs/research/problem_catalog_v0.41.md` — comprehensive catalog of 14 problems (P1-P14), 13 validated principles, constraint map, and strategic analysis across v0.30-v0.41
+* Maintenance:
+    - Add problem_catalog_v0.41.md with the analysis
+    - Move completed plan to implemented directory
+        - Moved: `misc/plan/plan_20260223_agent_v2_architecture_rethink.md` → `misc/plan/implemented/`
+    - Move completed plan to implemented directory
+        - Moved: misc/plan.md → misc/plan/implemented/plan_20260128_architecture_refactor_data_separation.md — renamed following naming convention and archived as completed
 
 v0.41.0 – 2026-02-14
 
