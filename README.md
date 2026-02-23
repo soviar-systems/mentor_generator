@@ -1,93 +1,167 @@
-# 🚀 Step-by-Step User Guide
+# Mentor Generator
 
-Mentor generator is your personal AI mentor, which creates a customized training program just for you. Unlike static courses, the mentor generator adapts to your language, knowledge level, goals, and even technical constraints.
+Mentor Generator creates a personalized AI learning mentor tailored to your language, knowledge level, goals, and constraints. It outputs a single YAML configuration file that defines your personal mentor — personality, teaching rules, curriculum, and session record format — all in one place.
 
-In just 5 minutes of conversation, it generates a unique configuration file—a digital “core” of your personal mentor, which will accompany you throughout your educational journey, keep track of your progress, and evolve together with you.
+> **Important notes:**
+> 1. AI models can hallucinate. The system contains many checks, but there is no 100% guarantee.
+> 2. Don't drag learning sessions out — change chats often to avoid context degradation.
+> 3. This is an experiment, not a production-ready solution.
 
-Start — and your ideal mentor will be created.
+## Quick Start (Agent CLI)
 
-> Warning:
-> 1. AI models can hallucinate (just like any person). The prompt contains many checks and cross-checks, but there is no 100% guarantee against hallucinations.
-> 2. The huge prompt size allows for a maximum set of model rules, but may also confuse it. Don’t drag sessions out, change chats more often, and be prepared for possible mentor malfunctions.
-> 3. Remember this is an experiment, not a solution ready for industrial deployment.
+The primary way to use Mentor Generator is the Python CLI agent.
 
-## Step 1: Getting the JSON File
+### Prerequisites
 
-Copy the contents of the `mentor_generator.json` file and paste it into the chat window of any powerful model.
+- Python 3.10–3.13
+- [uv](https://docs.astral.sh/uv/) package manager
+- A Gemini API key ([get one here](https://aistudio.google.com/apikey))
 
-> Attention! This monolithic and extremely large prompt must only be loaded into very powerful models. Local models will quickly lose context.
-> ChatGPT5 usually reads the file verbatim and starts asking you what you want it to do. On the other hand, models like Gemini 2.5 Pro, Deepseek start working immediately, so we recommend using them.
+### Installation
 
-## Step 2: Understanding Dialogue Principles
+```bash
+git clone https://github.com/lefthand67/mentor_generator.git
+cd mentor_generator
+uv sync
+```
 
-The dialogue scenario is pre-written in the prompt itself. The AI will ask you questions one by one, guiding you through the steps described below.
+### Configuration
 
-1. The AI starts the session in Russian and introduces itself.
-2. Then it automatically switches to the language of your response.
-   * If you reply in English, it continues in English.
-   * If you reply in Spanish, it continues in Spanish, etc.
-3. It asks one question at a time; answer them in the same sequence. If you realize you forgot to say something, you can clearly state that in another reply (for example: "I forgot to mention…").
-4. After all questions, a “pedagogical validation” step is performed to ensure the mentor’s design matches your profile. You do not need to understand the details of the check; the step is required for the model’s self-control.
-5. After your confirmation, it generates a new JSON file—the system prompt for your personal learning mentor.
+Set your API key as an environment variable:
 
-Afterwards, you will use this generated JSON as a system message in future sessions.
+```bash
+export GEMINI_API_KEY="your-api-key-here"
+```
 
-## Step 3: How to Answer the Questions
+Or create a global config file at `~/.mentor.generator.config.yml`:
 
-Answer with brief, clear sentences, but the more detail you give, the more personalized the result will be.
+```yaml
+api_key_env: GEMINI_API_KEY
+```
 
-💡 Tip: Don't be vague and don't jump between topics, so as not to confuse the AI. A bad answer is not in your interest.
+You can also create a local config `.mentor.generator.config.yml` in the project root to override settings per project.
 
-| Prompt Question           | How to Answer                                                             |
-| ------------------------- | ------------------------------------------------------------------------- |
-| Language                  | “English”, “Русский”, or any supported language.                   |
-| Topic                     | “Python for Data Analysis”, “History of Byzantium”, etc..          |
-| Experience Level          | “Beginner in programming but strong in math.”.                     |
-| Learning Goals            | “Practice through examples and conceptual clarity.”.                |
-| Constraints               | “Only laptop, Windows 7, 4 GB RAM.”.                               |
-| Depth                     | “Medium tech level, focus on reasoning.”.                          |
-| Subtopics                 | “NumPy arrays, SQL JOIN operations, project structure.”.           |
-| Time Limits               | “1 hour per day, in the evenings.”.                                |
-| Mentor Tone/Role          | “Friendly but strict.”, “More experienced colleague.” You may name a specific real or fictional person. |
+### Generate a Mentor
 
-The mentor uses these answers to create a structured JSON file with a system prompt.
+```bash
+uv run python -m agent.main
+```
 
-## Step 4: Saving and Reusing Your Personalized Prompt
+The agent walks you through 9 questions:
 
-When the AI displays the JSON block, copy it exactly as is, including brackets.
+| # | Question | Example Answer |
+|---|----------|----------------|
+| 0 | Preferred communication language | "English", "Русский" |
+| Q1 | Mentor's teaching language | "English" |
+| Q2 | Topic to learn | "Python for Data Analysis", "History of Byzantium" |
+| Q3 | Current experience level | "Beginner in programming but strong in math" |
+| Q4 | Target depth and learning goals | "Practical how-to skills with deep understanding" |
+| Q5 | Environment, tools, constraints | "Only laptop, Windows, 4 GB RAM" |
+| Q6 | Specific subtopics to cover | "NumPy arrays, SQL JOIN operations" |
+| Q7 | Learning strategy | DEPTH-FIRST (mastery-gated) or TIME-BOXED (deadline-driven) |
+| Q8 | Mastery verification method | "Practical assignments and Socratic questioning" |
+| Q9 | Mentor tone/persona | "Friendly but strict", "Like Richard Feynman" |
 
-Save it. Afterwards, you can reuse it by pasting the saved JSON into any new chat.
+After you answer, the agent makes **one** LLM call, fills the template, validates the output, and writes two files:
 
-## Step 5: Continuing Sessions (Managing State)
+```
+output/
+├── mentor_system_prompt.yml   # Your complete mentor configuration (YAML)
+└── course_history             # Empty file, grows during learning
+```
 
-Your mentor prompt supports session continuity:
+### CLI Options
 
-* It tracks your progress via `additional_context`.
-* Upon restart, the AI reads `additional_context` and resumes where you stopped.
-* The JSON updates only on certain triggers (session end, milestone achievement, progress check).
+```bash
+# Full pipeline (questionnaire → API call → compile)
+uv run python -m agent.main
 
-When the AI says “Updating your learning progress…”, it will display a new JSON block—copy and save it, replacing the previous one.
+# Skip questionnaire, reuse saved answers (re-call API)
+uv run python -m agent.main --skip-collect
 
-Wishing you an interesting and engaging learning experience!
+# Skip questionnaire + API, recompile from saved artifacts only
+uv run python -m agent.main --skip-collect --skip-api
+```
 
-***
+Answers and API responses are cached in `.mentor.generator.artifacts/` so you can iterate on the compile step without re-answering questions or spending API calls.
 
-## Real-World Example (For Deep Learning Engineers):
+## How the Agent Works
 
-Suppose you want a customized mentor for “Deep Learning with PyTorch,” and your technical limitation is: “Only a Linux laptop, 8GB RAM.” You reply to each prompt as shown in the table above. The AI generates a JSON system prompt tailored to your exact context. This lets you resume your session after a break, and your learning program adapts as you progress. If a topic feels unclear (e.g., “backpropagation math”), you clarify it in the next answer—the mentor evolves with your feedback.
+The agent runs a three-stage pipeline:
 
-Projects examples:
+```
+Collect (0 API calls)  →  Create (1 API call)  →  Compile (0 API calls)
+       CLI questionnaire       LLM generates           Template filling,
+       gathers 9 answers       creative content         validation, YAML output
+```
+
+1. **Collect** — CLI questionnaire gathers your answers (no API calls)
+2. **Create** — One LLM call generates creative content (persona, expertise, curriculum phases). The LLM returns labeled text blocks, not structured data
+3. **Compile** — Deterministic code parses the response, injects it into the template, validates structure, and writes YAML
+
+This architecture means the LLM is a **creative engine**, not a compiler. All structural decisions are made by code, eliminating template drift and format errors.
+
+## Learning Sessions
+
+After generating your mentor, see [agent/USAGE.md](agent/USAGE.md) for the full learning workflow — how to start sessions, continue from where you left off, and manage your course history.
+
+## Web Chat Workflow (Legacy)
+
+If you prefer not to install anything, you can use the original web-chat workflow:
+
+1. Copy the contents of `web_version/mentor_generator.json`
+2. Paste into a powerful AI chat (Gemini Pro, DeepSeek, Qwen3-Max)
+3. Answer 9 questions interactively
+4. The AI validates and outputs one YAML file
+5. Save the file and create an empty `course_history`
+
+> **Note:** The web-chat workflow is preserved for backward compatibility. The agent CLI is recommended — it produces more reliable output because structural decisions are made by code, not by the LLM.
+
+## Project Structure
+
+```
+mentor_generator/
+├── agent/                        # Python CLI (primary product)
+│   ├── main.py                   # Pipeline orchestrator
+│   ├── collector.py              # CLI questionnaire (0 API calls)
+│   ├── creative_engine.py        # Single LLM call + parser
+│   ├── template_engine.py        # Deterministic template filling
+│   ├── validator.py              # Structural validation
+│   ├── yaml_writer.py            # YAML output
+│   ├── settings.py               # Layered config
+│   ├── provider.py               # LLM provider abstraction
+│   ├── templates/                # Output schema template
+│   ├── USAGE.md                  # Post-generation user guide
+│   └── tests/                    # Golden-file tests (0 API calls)
+├── web_version/                  # Legacy web-chat workflow
+│   └── mentor_generator.json     # Original meta-prompt
+├── architecture/                 # ADRs, postmortems, research
+├── pyproject.toml
+└── CLAUDE.md
+```
+
+## Running Tests
+
+```bash
+uv run pytest agent/tests/ -v
+```
+
+All tests are offline (0 API calls) — they use golden fixtures to verify the pipeline.
+
+## Example Projects
+
+Real courses created with Mentor Generator:
 
 1. [llm_from_scratch_practice](https://github.com/lefthand67/llm_from_scratch_practice)
-1. [python_threading_for_ai_course](https://github.com/lefthand67/python_threading_for_ai_course)
+2. [python_threading_for_ai_course](https://github.com/lefthand67/python_threading_for_ai_course)
 
-## Pitfalls and Peer Review
+## Pitfalls
 
-- Overly large prompts can crash or confuse weaker models: always use top-tier, current AI models for these workflows.
-- Vague answers yield poor personalization; always be specific in your responses.
-- Expect occasional model hallucinations: cross-check all mentor advice with trusted sources or your own expertise.
-- Treat this as an experimental workflow, not a production-ready solution.
+- **Weak models:** Use top-tier AI models for learning sessions — weak models lose context quickly
+- **Vague answers:** Be specific during setup — vague answers yield poor personalization
+- **Hallucinations:** Cross-check mentor advice with trusted sources
+- **Long sessions:** Change chats often to maintain quality
 
-For professional use, always review each stage of mentor generation and verify the final JSON configuration against your learning goals and constraints. This ensures the system prompt is reliable and safe for serious learning.
+## Questions?
 
-If you have further questions on best practices, configuration pitfalls, or want peer review of your setup, please provide your JSON block and scenario for feedback.
+If you have questions or want feedback on your setup, open an issue with your configuration files and scenario.

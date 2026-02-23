@@ -2,3 +2,10 @@ mentors*/
 todo.md
 .ipynb_checkpoints/
 .aider*
+.mentor.generator.artifacts/
+.mentor.generator.config.yml
+output/
+.venv/
+__pycache__/
+*.pyc
+*.kate-swp
