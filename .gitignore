@@ -8,3 +8,4 @@ output/
 .venv/
 __pycache__/
 *.pyc
+*.kate-swp

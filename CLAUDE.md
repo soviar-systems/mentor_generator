@@ -131,6 +131,18 @@ Additional patterns:
 - Config: `~/.mentor.generator.config.yml` (global/secrets) → `.mentor.generator.config.yml` (local overrides)
 - Artifacts: `.mentor.generator.artifacts/` (gitignored, reusable across runs)
 
+## JSON/Template Conventions
+
+Template field taxonomy (ADR-26004):
+- **Literal values** — no prefix, no <brackets>. Copied verbatim to output.
+- **Placeholders** — value contains <...>. Replaced with user data by the compiler.
+- **_-prefixed fields** — _notes, _template_notes, _example_*. Internal guidance preserved in output for the mentor AI.
+- No unprefixed "example" or "illustrative" fields. If it's guidance, it must have a _ prefix.
+
+Other conventions:
+- Version tracked in metadata.version
+- Top-level fields are human-readable and machine-usable
+
 ## Usage Workflow
 
 ### Creating a Mentor (Agent — Primary)
@@ -158,19 +170,14 @@ Additional patterns:
 4. At session end, mentor outputs a session record
 5. Append record to course_history, repeat
 
-## JSON/Template Conventions
+## Critical Conventions
 
-Template field taxonomy (ADR-26004):
-- **Literal values** — no prefix, no <brackets>. Copied verbatim to output.
-- **Placeholders** — value contains <...>. Replaced with user data by the compiler.
-- **_-prefixed fields** — _notes, _template_notes, _example_*. Internal guidance preserved in output for the mentor AI.
-- No unprefixed "example" or "illustrative" fields. If it's guidance, it must have a _ prefix.
+### Planning
+When you create a plan in /plan mode, save it to misc/plan/plan_<YYYYMMDD>_<descriptive_slug>.md, ONLY then start implementation. After the plan is fully implemented, move it to misc/plan/implemented/. This is needed to save the history of the decisions made between context switches.
 
-Other conventions:
-- Version tracked in metadata.version
-- Top-level fields are human-readable and machine-usable
+**Plan splitting**: Always divide large plans into smaller independent parts. Each part runs in a separate session with clean context, reducing token usage. Split at natural boundaries where the next part doesn't need the exploration context from the previous one.
 
-## Commit Conventions
+### Commit Conventions
 
 Follow the structured commit body format (from ADR-26024 in the ai_engineering_book repo).
 
@@ -196,10 +203,6 @@ feat: add greeting placeholders to session protocols (v0.40.0)
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
-
-## Critical Conventions
-
-When you create a plan in /plan mode, save it to misc/plan/plan_<YYYYMMDD>_<descriptive_slug>.md, ONLY then start implementation. After the plan is fully implemented, move it to misc/plan/implemented/. This is needed to save the history of the decisions made between context switches.
 
 ## When Editing
 
